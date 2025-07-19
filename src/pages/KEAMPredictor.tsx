@@ -1,258 +1,238 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calculator, TrendingUp, Target, Info } from 'lucide-react';
+import { Calculator, TrendingUp, Target, Award, ArrowRight } from 'lucide-react';
+import { keamService } from '../lib/supabase';
 
 const KEAMPredictor = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    rank: '',
-    category: '',
-    location: '',
-    branch: ''
-  });
+  const [keamRank, setKeamRank] = useState('');
+  const [category, setCategory] = useState('General');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const categories = [
-    { value: 'general', label: 'General' },
-    { value: 'obc', label: 'OBC' },
-    { value: 'sc', label: 'SC' },
-    { value: 'st', label: 'ST' },
-    { value: 'ezhava', label: 'Ezhava' },
-    { value: 'muslim', label: 'Muslim' },
-    { value: 'latin', label: 'Latin Catholic' },
-    { value: 'other', label: 'Other' }
+    'General',
+    'OBC',
+    'SC',
+    'ST',
+    'EWS',
+    'PH'
   ];
 
-  const locations = [
-    { value: 'thiruvananthapuram', label: 'Thiruvananthapuram' },
-    { value: 'kochi', label: 'Kochi' },
-    { value: 'kozhikode', label: 'Kozhikode' },
-    { value: 'thrissur', label: 'Thrissur' },
-    { value: 'kottayam', label: 'Kottayam' },
-    { value: 'kollam', label: 'Kollam' },
-    { value: 'palakkad', label: 'Palakkad' },
-    { value: 'anywhere', label: 'Anywhere in Kerala' }
-  ];
-
-  const branches = [
-    { value: 'computer', label: 'Computer Science Engineering' },
-    { value: 'electronics', label: 'Electronics & Communication' },
-    { value: 'mechanical', label: 'Mechanical Engineering' },
-    { value: 'civil', label: 'Civil Engineering' },
-    { value: 'electrical', label: 'Electrical Engineering' },
-    { value: 'chemical', label: 'Chemical Engineering' },
-    { value: 'it', label: 'Information Technology' },
-    { value: 'any', label: 'Any Branch' }
-  ];
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Store prediction data in localStorage or context
-    localStorage.setItem('keamPredictionData', JSON.stringify(formData));
-    navigate('/keam-results');
-  };
+    
+    if (!keamRank || !category) {
+      setError('Please fill in all fields');
+      return;
+    }
 
-  const isFormValid = formData.rank && formData.category && formData.location && formData.branch;
+    const rank = parseInt(keamRank);
+    if (isNaN(rank) || rank <= 0) {
+      setError('Please enter a valid KEAM rank');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: prediction, error: predictionError } = await keamService.predictColleges(rank, category);
+      
+      if (predictionError) {
+        setError('Failed to generate prediction. Please try again.');
+        return;
+      }
+
+      // Store prediction in sessionStorage for the results page
+      sessionStorage.setItem('keamPrediction', JSON.stringify({
+        rank: rank,
+        category: category,
+        prediction: prediction,
+        timestamp: new Date().toISOString()
+      }));
+
+      // Redirect to results page
+      navigate('/keam-results');
+
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      console.error('Prediction error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
-            <div className="bg-[#2563EB] rounded-full p-4">
-              <Calculator className="w-8 h-8 text-white" />
-            </div>
+          <div className="flex items-center justify-center mb-4">
+            <Calculator className="w-12 h-12 text-[#2563EB] mr-3" />
+            <h1 className="text-4xl font-bold text-gray-900">KEAM College Predictor</h1>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            KEAM Rank Predictor
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Get accurate predictions for engineering college admissions in Kerala based on your KEAM rank and preferences.
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Get AI-powered predictions for your college admissions based on your KEAM rank and category. 
+            Our algorithm analyzes historical data to provide accurate recommendations.
           </p>
         </div>
 
-        {/* Info Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {/* Features */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-            <div className="bg-[#2563EB]/10 rounded-full p-3 w-fit mx-auto mb-4">
-              <TrendingUp className="w-6 h-6 text-[#2563EB]" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">95% Accuracy</h3>
-            <p className="text-gray-600 text-sm">Our predictions are based on historical data and trends</p>
+            <TrendingUp className="w-12 h-12 text-green-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Historical Analysis</h3>
+            <p className="text-gray-600">Based on 4 years of KEAM rank data and trends</p>
           </div>
+          
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-            <div className="bg-[#2563EB]/10 rounded-full p-3 w-fit mx-auto mb-4">
-              <Target className="w-6 h-6 text-[#2563EB]" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">50+ Colleges</h3>
-            <p className="text-gray-600 text-sm">Comprehensive data from all engineering colleges in Kerala</p>
+            <Target className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Accurate Predictions</h3>
+            <p className="text-gray-600">AI-powered algorithm with confidence scoring</p>
           </div>
+          
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-            <div className="bg-[#2563EB]/10 rounded-full p-3 w-fit mx-auto mb-4">
-              <Info className="w-6 h-6 text-[#2563EB]" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Real-time Updates</h3>
-            <p className="text-gray-600 text-sm">Updated with latest cutoff trends and admission data</p>
+            <Award className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Comprehensive Results</h3>
+            <p className="text-gray-600">High, medium, and low chance colleges with courses</p>
           </div>
         </div>
 
         {/* Prediction Form */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#2563EB] to-[#1d4ed8] p-6">
-            <h2 className="text-2xl font-semibold text-white mb-2">Enter Your Details</h2>
-            <p className="text-white/90">Fill in your KEAM rank and preferences to get personalized predictions</p>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* KEAM Rank */}
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+            Enter Your Details
+          </h2>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="rank" className="block text-sm font-medium text-gray-700 mb-2">
-                KEAM Rank *
+              <label htmlFor="keamRank" className="block text-sm font-medium text-gray-700 mb-2">
+                Your KEAM Rank *
               </label>
               <input
                 type="number"
-                id="rank"
-                name="rank"
-                value={formData.rank}
-                onChange={handleInputChange}
-                placeholder="Enter your KEAM rank (e.g., 5000)"
+                id="keamRank"
+                value={keamRank}
+                onChange={(e) => setKeamRank(e.target.value)}
+                placeholder="Enter your KEAM rank (e.g., 1500)"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                required
                 min="1"
-                max="200000"
+                required
               />
-              <p className="text-sm text-gray-500 mt-1">Enter your KEAM rank (1-200000)</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Enter your actual KEAM rank from the official results
+              </p>
             </div>
 
-            {/* Category */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                 Category *
               </label>
               <select
                 id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                 required
               >
-                <option value="">Select your category</option>
-                {categories.map(category => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
                   </option>
                 ))}
               </select>
+              <p className="text-sm text-gray-500 mt-1">
+                Select your reservation category as per KEAM guidelines
+              </p>
             </div>
 
-            {/* Preferred Location */}
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Preferred Location *
-              </label>
-              <select
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                required
-              >
-                <option value="">Select preferred location</option>
-                {locations.map(location => (
-                  <option key={location.value} value={location.value}>
-                    {location.label}
-                  </option>
-                ))}
-              </select>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Analyzes historical KEAM rank data from the last 4 years</li>
+                <li>• Considers trends and patterns in rank cutoffs</li>
+                <li>• Provides confidence scores for each prediction</li>
+                <li>• Categorizes colleges into High, Medium, and Low chance</li>
+              </ul>
             </div>
 
-            {/* Preferred Branch */}
-            <div>
-              <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-2">
-                Preferred Branch *
-              </label>
-              <select
-                id="branch"
-                name="branch"
-                value={formData.branch}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
-                required
-              >
-                <option value="">Select preferred branch</option>
-                {branches.map(branch => (
-                  <option key={branch.value} value={branch.value}>
-                    {branch.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                type="submit"
-                disabled={!isFormValid}
-                className={`flex-1 px-8 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
-                  isFormValid
-                    ? 'bg-[#2563EB] text-white hover:bg-[#1d4ed8] shadow-lg hover:shadow-xl'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <Calculator className="w-5 h-5" />
-                <span>Get Predictions</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ rank: '', category: '', location: '', branch: '' })}
-                className="flex-1 sm:flex-initial px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all duration-200"
-              >
-                Clear Form
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#2563EB] text-white py-3 px-6 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Generating Predictions...
+                </>
+              ) : (
+                <>
+                  Get Predictions
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </>
+              )}
+            </button>
           </form>
+
+          {/* Disclaimer */}
+          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Disclaimer:</strong> This prediction is based on historical data analysis only. 
+              Actual cutoffs may vary due to various factors including number of applicants, 
+              changes in reservation policies, and other unforeseen circumstances. 
+              Please use this as a reference and always verify with official sources.
+            </p>
+          </div>
         </div>
 
-        {/* Help Section */}
-        <div className="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-200">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">How It Works</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-800">
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div>
-                <p className="font-medium">Data Analysis</p>
-                <p>We analyze historical cutoff data from all engineering colleges in Kerala</p>
+        {/* Additional Information */}
+        <div className="mt-12 grid md:grid-cols-2 gap-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">About KEAM</h3>
+            <p className="text-gray-600 mb-4">
+              Kerala Engineering Architecture Medical (KEAM) is the entrance examination for admission 
+              to professional degree courses in Kerala. The exam is conducted by the Commissioner for 
+              Entrance Examinations (CEE).
+            </p>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Engineering courses in Government and Self-financing colleges</li>
+              <li>• Architecture courses</li>
+              <li>• Medical and Allied courses</li>
+              <li>• Various reservation categories available</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Prediction Categories</h3>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                <div>
+                  <p className="font-medium text-gray-900">High Chance (90%+)</p>
+                  <p className="text-sm text-gray-600">Very likely to get admission</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div>
-                <p className="font-medium">Trend Prediction</p>
-                <p>Our algorithm considers current trends and admission patterns</p>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
+                <div>
+                  <p className="font-medium text-gray-900">Medium Chance (50-90%)</p>
+                  <p className="text-sm text-gray-600">Moderate chance of admission</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div>
-                <p className="font-medium">Personalized Results</p>
-                <p>Get college suggestions based on your rank, category, and preferences</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div>
-                <p className="font-medium">Regular Updates</p>
-                <p>Predictions are updated regularly with latest admission data</p>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
+                <div>
+                  <p className="font-medium text-gray-900">Low Chance (&lt;50%)</p>
+                  <p className="text-sm text-gray-600">Less likely but possible</p>
+                </div>
               </div>
             </div>
           </div>

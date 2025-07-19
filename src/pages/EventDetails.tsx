@@ -1,118 +1,66 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Users, Clock, DollarSign, ExternalLink, Share2, Heart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { eventService, Event, EventSpeaker, EventAgenda, EventSponsor } from '../lib/supabase';
 
 const EventDetails = () => {
   const { id } = useParams();
-  const { isLoggedIn } = useAuth();
-  
-  // Mock data for event details
-  const event = {
-    id: 1,
-    title: 'Kerala Tech Summit 2024',
-    description: 'The Kerala Tech Summit 2024 is the premier technology conference in Kerala, bringing together industry leaders, innovators, startups, and tech enthusiasts from across the region. This year\'s summit focuses on emerging technologies, digital transformation, and the future of tech in Kerala.',
-    fullDescription: 'Join us for an incredible two-day journey through the latest trends in technology, featuring keynote speeches from industry pioneers, interactive workshops, startup showcases, and networking opportunities. The summit will cover topics including artificial intelligence, blockchain, IoT, cybersecurity, and sustainable technology solutions.',
-    date: '2024-03-15',
-    endDate: '2024-03-16',
-    time: '09:00 AM',
-    endTime: '06:00 PM',
-    location: 'Kochi',
-    venue: 'Lulu International Convention Centre',
-    address: 'Lulu International Convention Centre, Edapally, Kochi, Kerala 682024',
-    category: 'Conference',
-    image: 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=800',
-    attendees: '1000+',
-    price: 'Free',
-    organizer: 'Kerala IT Mission',
-    organizerImage: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=100',
-    registrationLink: 'https://example.com/register',
-    website: 'https://keralatechsummit.com',
-    email: 'info@keralatechsummit.com',
-    phone: '+91 484 1234567',
-    speakers: [
-      {
-        name: 'Dr. Rajesh Kumar',
-        title: 'Chief Technology Officer',
-        company: 'TechCorp India',
-        image: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=200',
-        topic: 'Future of AI in Healthcare'
-      },
-      {
-        name: 'Priya Menon',
-        title: 'Founder & CEO',
-        company: 'StartupXYZ',
-        image: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=200',
-        topic: 'Building Scalable Startups'
-      },
-      {
-        name: 'Arjun Nair',
-        title: 'Head of Innovation',
-        company: 'Global Tech Solutions',
-        image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=200',
-        topic: 'Blockchain in Government'
+  const { isLoggedIn, user } = useAuth();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
+  const [agenda, setAgenda] = useState<EventAgenda[]>([]);
+  const [sponsors, setSponsors] = useState<EventSponsor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Fetch event data from database
+  useEffect(() => {
+    const fetchEventData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch event details
+        const { data: eventData, error: eventError } = await eventService.getEventById(id);
+        if (eventError) {
+          setError('Failed to load event details');
+          console.error('Error fetching event:', eventError);
+          return;
+        }
+        setEvent(eventData);
+
+        // Fetch speakers
+        const { data: speakersData } = await eventService.getEventSpeakers(id);
+        setSpeakers(speakersData);
+
+        // Fetch agenda
+        const { data: agendaData } = await eventService.getEventAgenda(id);
+        setAgenda(agendaData);
+
+        // Fetch sponsors
+        const { data: sponsorsData } = await eventService.getEventSponsors(id);
+        setSponsors(sponsorsData);
+
+        // Check if user is registered
+        if (isLoggedIn && user) {
+          const { data: registrationData } = await eventService.checkUserRegistration(id, user.id);
+          setIsRegistered(!!registrationData);
+        }
+
+      } catch (err) {
+        setError('Failed to load event details');
+        console.error('Error fetching event data:', err);
+      } finally {
+        setLoading(false);
       }
-    ],
-    agenda: [
-      {
-        time: '09:00 AM - 09:30 AM',
-        title: 'Registration & Welcome Coffee',
-        description: 'Check-in and networking with fellow attendees'
-      },
-      {
-        time: '09:30 AM - 10:30 AM',
-        title: 'Opening Keynote',
-        description: 'Future of Technology in Kerala',
-        speaker: 'Dr. Rajesh Kumar'
-      },
-      {
-        time: '10:30 AM - 11:00 AM',
-        title: 'Coffee Break',
-        description: 'Networking and refreshments'
-      },
-      {
-        time: '11:00 AM - 12:00 PM',
-        title: 'Panel Discussion',
-        description: 'AI and Machine Learning Applications',
-        speaker: 'Industry Experts'
-      },
-      {
-        time: '12:00 PM - 01:00 PM',
-        title: 'Startup Showcase',
-        description: 'Kerala\'s most promising startups',
-        speaker: 'Selected Startups'
-      },
-      {
-        time: '01:00 PM - 02:00 PM',
-        title: 'Lunch Break',
-        description: 'Networking lunch and exhibition'
-      },
-      {
-        time: '02:00 PM - 03:00 PM',
-        title: 'Technical Workshop',
-        description: 'Hands-on blockchain development',
-        speaker: 'Arjun Nair'
-      },
-      {
-        time: '03:00 PM - 04:00 PM',
-        title: 'Fireside Chat',
-        description: 'Building successful tech companies',
-        speaker: 'Priya Menon'
-      },
-      {
-        time: '04:00 PM - 06:00 PM',
-        title: 'Networking Session',
-        description: 'Connect with industry professionals'
-      }
-    ],
-    sponsors: [
-      { name: 'TechCorp', logo: 'https://via.placeholder.com/120x60/2563EB/ffffff?text=TechCorp' },
-      { name: 'InnovateLab', logo: 'https://via.placeholder.com/120x60/2563EB/ffffff?text=InnovateLab' },
-      { name: 'StartupHub', logo: 'https://via.placeholder.com/120x60/2563EB/ffffff?text=StartupHub' },
-      { name: 'CloudTech', logo: 'https://via.placeholder.com/120x60/2563EB/ffffff?text=CloudTech' }
-    ],
-    tags: ['Technology', 'AI', 'Blockchain', 'Startups', 'Innovation', 'Kerala']
-  };
+    };
+
+    fetchEventData();
+  }, [id, isLoggedIn, user]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -124,18 +72,67 @@ const EventDetails = () => {
     });
   };
 
-  const handleRegistration = () => {
+  const handleRegistration = async () => {
     if (!isLoggedIn) {
-      // Show login prompt
       if (window.confirm('You need to be logged in to register for events. Would you like to login now?')) {
         window.location.href = '/login';
       }
       return;
     }
-    
-    // Redirect to external registration
-    window.open(event.registrationLink, '_blank');
+
+    if (!event || !user) return;
+
+    try {
+      const { error } = await eventService.registerForEvent(event.id, user.id);
+      if (error) {
+        alert('Failed to register for event. Please try again.');
+        console.error('Registration error:', error);
+      } else {
+        setIsRegistered(true);
+        alert('Successfully registered for the event!');
+      }
+    } catch (err) {
+      alert('Failed to register for event. Please try again.');
+      console.error('Registration error:', err);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4"></div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Loading event details...</h3>
+              <p className="text-gray-600">Please wait while we fetch the event information.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+              <h3 className="text-xl font-semibold text-red-600 mb-2">Error loading event</h3>
+              <p className="text-gray-600 mb-4">{error || 'Event not found'}</p>
+              <Link
+                to="/events"
+                className="bg-[#2563EB] text-white px-6 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200"
+              >
+                Back to Events
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -152,7 +149,7 @@ const EventDetails = () => {
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-8">
           <div className="relative">
             <img
-              src={event.image}
+              src={event.image_url || 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=800'}
               alt={event.title}
               className="w-full h-64 md:h-80 object-cover"
             />
@@ -178,7 +175,7 @@ const EventDetails = () => {
                 </div>
                 <div className="flex items-center">
                   <Users className="w-4 h-4 mr-1" />
-                  <span>{event.attendees} attendees</span>
+                  <span>{event.current_attendees} attendees</span>
                 </div>
               </div>
             </div>
@@ -192,67 +189,73 @@ const EventDetails = () => {
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">About This Event</h2>
               <p className="text-gray-600 mb-4">{event.description}</p>
-              <p className="text-gray-600">{event.fullDescription}</p>
+              {event.full_description && (
+                <p className="text-gray-600">{event.full_description}</p>
+              )}
             </div>
 
             {/* Speakers */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Featured Speakers</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {event.speakers.map((speaker, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow duration-200">
-                    <img
-                      src={speaker.image}
-                      alt={speaker.name}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{speaker.name}</h3>
-                      <p className="text-sm text-gray-600 mb-1">{speaker.title}</p>
-                      <p className="text-sm text-[#2563EB] mb-2">{speaker.company}</p>
-                      <p className="text-sm text-gray-700 font-medium">"{speaker.topic}"</p>
+            {speakers.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Featured Speakers</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {speakers.map((speaker, index) => (
+                    <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow duration-200">
+                      <img
+                        src={speaker.image_url || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                        alt={speaker.name}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{speaker.name}</h3>
+                        {speaker.title && <p className="text-sm text-gray-600">{speaker.title}</p>}
+                        {speaker.company && <p className="text-sm text-gray-600">{speaker.company}</p>}
+                        {speaker.topic && <p className="text-sm text-[#2563EB] font-medium">{speaker.topic}</p>}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Agenda */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Event Agenda</h2>
-              <div className="space-y-4">
-                {event.agenda.map((item, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 border-l-4 border-[#2563EB] bg-gray-50 rounded-r-lg">
-                    <div className="text-sm text-[#2563EB] font-medium min-w-0 flex-shrink-0">
-                      {item.time}
+            {agenda.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Event Agenda</h2>
+                <div className="space-y-4">
+                  {agenda.map((item, index) => (
+                    <div key={index} className="flex items-start space-x-4 p-4 border-l-4 border-[#2563EB] bg-gray-50 rounded-r-lg">
+                      <div className="text-sm text-[#2563EB] font-medium min-w-0 flex-shrink-0">
+                        {item.time_slot}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{item.title}</h3>
+                        {item.description && <p className="text-gray-600 text-sm">{item.description}</p>}
+                        {item.speaker_name && <p className="text-sm text-[#2563EB] font-medium">Speaker: {item.speaker_name}</p>}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
-                      <p className="text-sm text-gray-600 mb-1">{item.description}</p>
-                      {item.speaker && (
-                        <p className="text-sm text-[#2563EB] font-medium">{item.speaker}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Sponsors */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Sponsors</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {event.sponsors.map((sponsor, index) => (
-                  <div key={index} className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow duration-200">
-                    <img
-                      src={sponsor.logo}
-                      alt={sponsor.name}
-                      className="max-w-full max-h-12 object-contain"
-                    />
-                  </div>
-                ))}
+            {sponsors.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Sponsors</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {sponsors.map((sponsor, index) => (
+                    <div key={index} className="flex items-center justify-center p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow duration-200">
+                      <img
+                        src={sponsor.logo_url || `https://via.placeholder.com/120x60/2563EB/ffffff?text=${sponsor.name}`}
+                        alt={sponsor.name}
+                        className="max-w-full h-12 object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -292,7 +295,7 @@ const EventDetails = () => {
                   <Calendar className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
                   <div>
                     <p className="font-medium text-gray-900">{formatDate(event.date)}</p>
-                    <p className="text-sm text-gray-600">{event.time} - {event.endTime}</p>
+                    <p className="text-sm text-gray-600">{event.time} - {event.end_time}</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -305,7 +308,7 @@ const EventDetails = () => {
                 <div className="flex items-center">
                   <Users className="w-5 h-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="font-medium text-gray-900">{event.attendees} attendees</p>
+                    <p className="font-medium text-gray-900">{event.current_attendees} attendees</p>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -322,7 +325,7 @@ const EventDetails = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Organizer</h3>
               <div className="flex items-start space-x-3">
                 <img
-                  src={event.organizerImage}
+                  src={event.organizer_image_url || 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=100'}
                   alt={event.organizer}
                   className="w-12 h-12 rounded-lg object-cover"
                 />
