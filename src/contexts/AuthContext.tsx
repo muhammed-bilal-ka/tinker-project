@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { signInWithGoogleEnhanced, handleOAuthCallback, hasCompletedProfile } from '../lib/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -49,13 +50,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/complete-profile`
+    try {
+      const { data, error } = await signInWithGoogleEnhanced();
+      
+      if (error) {
+        console.error('Google OAuth error:', error);
+        throw error;
       }
-    });
-    if (error) throw error;
+      
+      // If successful, the user will be redirected to Google
+      console.log('Google OAuth initiated:', data);
+      
+    } catch (error) {
+      console.error('Google sign-in failed:', error);
+      throw error;
+    }
   };
 
   const signInWithEmail = async (email: string, password: string) => {

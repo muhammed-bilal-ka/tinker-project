@@ -223,7 +223,7 @@ export interface FlaggedReview {
 export const reviewService = {
   async getReviews(collegeId: string): Promise<Review[]> {
     const { data, error } = await supabase
-      .from('college_reviews')
+      .from('reviews')
       .select(`
         id,
         college_id,
@@ -424,7 +424,7 @@ export const profileService = {
 export const reviewService = {
   async getReviews(collegeId: string) {
     const { data, error } = await supabase
-      .from('college_reviews')
+      .from('reviews')
       .select(`
         *,
         user_profiles(full_name, avatar_url, username)
@@ -442,7 +442,7 @@ export const reviewService = {
 
   async createReview(reviewData: Omit<Review, 'id' | 'created_at' | 'user_profile'>) {
     const { data, error } = await supabase
-      .from('college_reviews')
+      .from('reviews')
       .insert([reviewData])
       .select()
       .single()
@@ -457,7 +457,7 @@ export const reviewService = {
 
   async getUserReview(collegeId: string, userId: string) {
     const { data, error } = await supabase
-      .from('college_reviews')
+      .from('reviews')
       .select('*')
       .eq('college_id', collegeId)
       .eq('user_id', userId)
@@ -698,36 +698,65 @@ export const eventService = {
 export const adminService = {
   // Check if user is admin
   async checkAdminStatus(userId: string) {
-    const { data, error } = await supabase
-      .from('admin_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .single()
+    try {
+      // First try the direct query
+      const { data, error } = await supabase
+        .from('admin_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single()
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error checking admin status:', error)
-      return { data: null, error }
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking admin status:', error)
+        return { data: null, error }
+      }
+
+      return { data: data as AdminRole | null, error: null }
+    } catch (err) {
+      console.error('Exception in checkAdminStatus:', err)
+      return { data: null, error: err as Error }
     }
-
-    return { data: data as AdminRole | null, error: null }
   },
 
   // Get admin permissions
   async getAdminPermissions(userId: string) {
-    const { data, error } = await supabase
-      .from('admin_roles')
-      .select('permissions')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('admin_roles')
+        .select('permissions')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single()
 
-    if (error) {
-      console.error('Error getting admin permissions:', error)
-      return { data: [], error }
+      if (error) {
+        console.error('Error getting admin permissions:', error)
+        return { data: [], error }
+      }
+
+      return { data: data?.permissions || [], error: null }
+    } catch (err) {
+      console.error('Exception in getAdminPermissions:', err)
+      return { data: [], error: err as Error }
     }
+  },
 
-    return { data: data?.permissions || [], error: null }
+  // Alternative admin check method using RPC
+  async checkAdminStatusRPC(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .rpc('is_admin', { user_uuid: userId })
+
+      if (error) {
+        console.error('Error checking admin status via RPC:', error)
+        return { data: false, error }
+      }
+
+      return { data: data || false, error: null }
+    } catch (err) {
+      console.error('Exception in checkAdminStatusRPC:', err)
+      return { data: false, error: err as Error }
+    }
   },
 
   // Manage colleges (admin only)
@@ -855,22 +884,23 @@ export const adminService = {
 
   // Flagged reviews management
   async getFlaggedReviews() {
-    const { data, error } = await supabase
-      .from('flagged_reviews')
-      .select(`
-        *,
-        reviews(*),
-        flagged_by_user:flagged_by(id, email),
-        resolved_by_user:resolved_by(id, email)
-      `)
-      .order('created_at', { ascending: false })
+    try {
+      // First try with joins
+      const { data, error } = await supabase
+        .from('flagged_reviews')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching flagged reviews:', error)
-      return { data: [], error }
+      if (error) {
+        console.error('Error fetching flagged reviews:', error)
+        return { data: [], error }
+      }
+
+      return { data: data as FlaggedReview[], error: null }
+    } catch (err) {
+      console.error('Exception in getFlaggedReviews:', err)
+      return { data: [], error: err as Error }
     }
-
-    return { data: data as FlaggedReview[], error: null }
   },
 
   async updateFlaggedReview(id: string, updateData: Partial<FlaggedReview>) {

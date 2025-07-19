@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Settings, LogOut } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../hooks/useAdmin';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const { isLoggedIn, user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -77,14 +79,16 @@ const Header = () => {
                       <User className="w-4 h-4" />
                       <span>My Profile</span>
                     </Link>
-                    <Link
-                      to="/admin"
-                      className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Admin</span>
-                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    )}
                     <button 
                       onClick={handleSignOut}
                       className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 w-full text-left"
@@ -150,6 +154,15 @@ const Header = () => {
                     >
                       My Profile
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                     <button 
                       onClick={handleSignOut}
                       className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-left"

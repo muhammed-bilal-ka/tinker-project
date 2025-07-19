@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { profileService, UserProfile } from '../lib/supabase';
-import { User, Mail, Phone, MapPin, Edit, Save, X, Copy, Check } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Edit, Save, X } from 'lucide-react';
 
 const Profile = () => {
   const { user, isLoggedIn } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -81,14 +80,6 @@ const Profile = () => {
     setEditing(false);
   };
 
-  const copyUserId = async () => {
-    if (user?.id) {
-      await navigator.clipboard.writeText(user.id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen py-8">
@@ -129,37 +120,6 @@ const Profile = () => {
             )}
           </div>
         </div>
-
-        {/* User ID Section (for admin setup) */}
-        {user && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">Admin Setup Information</h3>
-            <p className="text-blue-800 mb-4">
-              To set up admin access, you need to add your user ID to the database. Copy the ID below and use it in the SQL command.
-            </p>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-blue-900 mb-1">Your User ID:</label>
-                <div className="bg-white border border-blue-300 rounded-lg p-3 font-mono text-sm text-gray-700">
-                  {user.id}
-                </div>
-              </div>
-              <button
-                onClick={copyUserId}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center"
-              >
-                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                {copied ? 'Copied!' : 'Copy ID'}
-              </button>
-            </div>
-            <div className="mt-4 p-4 bg-white border border-blue-300 rounded-lg">
-              <p className="text-sm text-blue-800 mb-2"><strong>SQL Command to run in Supabase:</strong></p>
-              <code className="text-xs text-gray-700 bg-gray-100 p-2 rounded block">
-                INSERT INTO public.admin_roles (user_id, role, permissions) VALUES ('{user.id}', 'super_admin', '["manage_colleges", "manage_events", "manage_keam_data", "manage_users", "manage_reviews"]'::jsonb);
-              </code>
-            </div>
-          </div>
-        )}
 
         {/* Profile Information */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
@@ -280,8 +240,6 @@ const Profile = () => {
               )}
             </div>
           </div>
-
-
 
           {/* Action Buttons */}
           {editing && (

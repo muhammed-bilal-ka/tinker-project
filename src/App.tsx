@@ -14,6 +14,7 @@ import SignUp from './pages/SignUp';
 import Profile from './pages/Profile';
 import CompleteProfile from './pages/CompleteProfile';
 import Admin from './pages/Admin';
+import AdminTest from './pages/AdminTest';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 import { adminService } from './lib/supabase';
@@ -34,8 +35,15 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
 
       try {
         const { data: adminData, error } = await adminService.checkAdminStatus(user.id);
-        setIsAdmin(!!adminData && !error);
+        
+        if (error) {
+          console.error('Admin check error:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!adminData);
+        }
       } catch (err) {
+        console.error('Error checking admin status:', err);
         setIsAdmin(false);
       } finally {
         setLoading(false);
@@ -111,7 +119,7 @@ const AppContent = () => {
               } 
             />
             
-            {/* Admin Routes */}
+            {/* Admin Routes - Only for database-fed admins */}
             <Route 
               path="/admin" 
               element={
@@ -120,6 +128,18 @@ const AppContent = () => {
                 </ProtectedAdminRoute>
               } 
             />
+            
+            {/* Admin Test Route - Only in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <Route 
+                path="/admin-test" 
+                element={
+                  <ProtectedRoute>
+                    <AdminTest />
+                  </ProtectedRoute>
+                } 
+              />
+            )}
             
             <Route path="*" element={<NotFound />} />
           </Routes>

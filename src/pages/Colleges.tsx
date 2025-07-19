@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Star, ExternalLink, GraduationCap, Users } from 'lucide-react';
 import { collegeService, type College } from '../lib/supabase';
+import CollegeImage from '../components/CollegeImage';
 
 const Colleges = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -185,10 +186,12 @@ const Colleges = () => {
             {filteredColleges.map((college) => (
               <div key={college.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                 <div className="relative">
-                  <img
-                    src={college.image_url || 'https://images.pexels.com/photos/207692/pexels-photo-207692.jpeg?auto=compress&cs=tinysrgb&w=400'}
-                    alt={college.name}
-                    className="w-full h-48 object-cover"
+                  <CollegeImage
+                    imageUrl={college.image_url}
+                    collegeName={college.name}
+                    collegeType={college.type}
+                    className="w-full h-48"
+                    size="lg"
                   />
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
                     <span className={`text-sm font-medium ${

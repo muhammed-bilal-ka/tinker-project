@@ -50,11 +50,23 @@ const Admin = () => {
         return;
       }
 
+      console.log('Checking admin status for user:', user.id);
+      console.log('User email:', user.email);
+
       try {
         const { data: adminData, error: adminError } = await adminService.checkAdminStatus(user.id);
         
-        if (adminError || !adminData) {
-          setError('Access denied. Admin privileges required.');
+        console.log('Admin check result:', { adminData, adminError });
+        
+        if (adminError) {
+          console.error('Admin check error:', adminError);
+          setError(`Access denied. Admin privileges required. Error: ${adminError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!adminData) {
+          setError('Access denied. Admin privileges required. No admin role found.');
           setLoading(false);
           return;
         }
@@ -85,23 +97,33 @@ const Admin = () => {
     try {
       // Load colleges
       const { data: collegesData } = await collegeService.getColleges();
-      setColleges(collegesData);
+      setColleges(collegesData || []);
 
       // Load events
       const { data: eventsData } = await eventService.getEvents();
-      setEvents(eventsData);
+      setEvents(eventsData || []);
 
       // Load KEAM data
       const { data: keamData } = await keamService.getKEAMRankData();
-      setKeamData(keamData);
+      setKeamData(keamData || []);
 
       // Load file uploads
       const { data: uploadsData } = await adminService.getFileUploads(user.id);
-      setFileUploads(uploadsData);
+      setFileUploads(uploadsData || []);
 
-      // Load flagged reviews
-      const { data: reviewsData } = await adminService.getFlaggedReviews();
-      setFlaggedReviews(reviewsData);
+      // Load flagged reviews (with error handling)
+      try {
+        const { data: reviewsData, error: reviewsError } = await adminService.getFlaggedReviews();
+        if (reviewsError) {
+          console.warn('Could not load flagged reviews:', reviewsError);
+          setFlaggedReviews([]);
+        } else {
+          setFlaggedReviews(reviewsData || []);
+        }
+      } catch (reviewsErr) {
+        console.warn('Exception loading flagged reviews:', reviewsErr);
+        setFlaggedReviews([]);
+      }
 
     } catch (err) {
       console.error('Error loading dashboard data:', err);
@@ -276,6 +298,33 @@ const Admin = () => {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Debug Information */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">Debug Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p><strong>User ID:</strong> {user?.id}</p>
+              <p><strong>User Email:</strong> {user?.email}</p>
+              <p><strong>Is Logged In:</strong> {isLoggedIn ? 'Yes' : 'No'}</p>
+            </div>
+            <div>
+              <p><strong>Admin Role:</strong> {adminRole?.role || 'None'}</p>
+              <p><strong>Admin Active:</strong> {adminRole?.is_active ? 'Yes' : 'No'}</p>
+              <p><strong>Permissions:</strong> {permissions.join(', ') || 'None'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              console.log('Current user:', user);
+              console.log('Admin role:', adminRole);
+              console.log('Permissions:', permissions);
+            }}
+            className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs hover:bg-yellow-700"
+          >
+            Log to Console
+          </button>
         </div>
 
         {/* Navigation Tabs */}
