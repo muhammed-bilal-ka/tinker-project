@@ -162,39 +162,93 @@ const Admin = () => {
     try {
       setLoadingOperations(prev => ({ ...prev, fileUpload: true }));
       
-      // In a real app, you'd upload to Supabase Storage first
-      // For now, we'll simulate the upload
-      const fileData = {
-        admin_id: user.id,
-        file_name: selectedFile.name,
-        file_type: selectedFile.type,
-        file_size: selectedFile.size,
-        file_url: `https://example.com/uploads/${selectedFile.name}`,
-        upload_type: uploadType as 'college_data' | 'event_data' | 'keam_data' | 'other',
-        status: 'uploaded' as const,
-        metadata: {
-          originalName: selectedFile.name,
-          size: selectedFile.size,
-          type: selectedFile.type
-        }
-      };
-
-      const { error } = await adminService.uploadFile(fileData);
+      let result;
       
-      if (error) {
-        alert('Failed to upload file: ' + error.message);
+      if (uploadType === 'college_data') {
+        result = await adminService.processCollegeFile(selectedFile, user.id);
+      } else if (uploadType === 'keam_data') {
+        result = await adminService.processKEAMFile(selectedFile, user.id);
+      } else {
+        // Handle other file types (event_data, other)
+        const fileData = {
+          admin_id: user.id,
+          file_name: selectedFile.name,
+          file_type: selectedFile.type,
+          file_size: selectedFile.size,
+          file_url: `https://example.com/uploads/${selectedFile.name}`,
+          upload_type: uploadType as 'college_data' | 'event_data' | 'keam_data' | 'other',
+          status: 'uploaded' as const,
+          metadata: {
+            originalName: selectedFile.name,
+            size: selectedFile.size,
+            type: selectedFile.type
+          }
+        };
+
+        const { error } = await adminService.uploadFile(fileData);
+        
+        if (error) {
+          alert('Failed to upload file: ' + error.message);
+          return;
+        }
+
+        alert('File uploaded successfully!');
+        setSelectedFile(null);
+        await loadDashboardData();
         return;
       }
 
-      alert('File uploaded successfully!');
+      if (result.success) {
+        alert(`File processed successfully!\n\n${result.message}\n\nProcessed: ${result.stats?.processedRecords} records\nFailed: ${result.stats?.failedRecords} records`);
+        
+        // If KEAM data was processed, run predictions
+        if (uploadType === 'keam_data' && result.data && result.data.length > 0) {
+          const categories = [...new Set(result.data.map((item: any) => item.category))];
+          if (categories.length > 0) {
+            const sampleRank = 1000; // Example rank for demonstration
+            const predictionResult = await adminService.predictColleges(sampleRank, categories[0]);
+            if (predictionResult.data) {
+              console.log('KEAM Predictions:', predictionResult.data);
+              alert(`KEAM Predictor updated with new data!\n\nSample prediction for rank ${sampleRank} in ${categories[0]} category:\nHigh chance: ${predictionResult.data.high_chance.length} colleges\nMedium chance: ${predictionResult.data.medium_chance.length} colleges`);
+            }
+          }
+        }
+      } else {
+        alert(`File processing failed:\n\n${result.message}\n\nErrors:\n${result.errors?.join('\n')}`);
+      }
+
       setSelectedFile(null);
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to upload file: ' + (err as Error).message);
-      console.error('File upload error:', err);
+      alert('Failed to process file: ' + (err as Error).message);
+      console.error('File processing error:', err);
     } finally {
       setLoadingOperations(prev => ({ ...prev, fileUpload: false }));
+    }
+  };
+
+  const handleDeleteFileUpload = async (fileId: string) => {
+    if (!confirm('Are you sure you want to delete this file upload record? This will only remove the upload record, not the processed data.')) return;
+
+    try {
+      setLoadingOperations(prev => ({ ...prev, [`delete-file-${fileId}`]: true }));
+      
+      const { error } = await adminService.deleteFileUpload(fileId);
+      
+      if (error) {
+        alert('Failed to delete file upload: ' + error.message);
+        return;
+      }
+
+      alert('File upload record deleted successfully!');
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to delete file upload: ' + (err as Error).message);
+      console.error('Delete file upload error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`delete-file-${fileId}`]: false }));
     }
   };
 
@@ -1246,45 +1300,79 @@ const Admin = () => {
 
           {activeTab === 'uploads' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-gray-900">File Uploads</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">File Uploads & Processing</h2>
               
               {/* Upload Section */}
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Upload New File</h3>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <Upload className="w-5 h-5 mr-2 text-blue-600" />
+                  Upload & Process Files
+                </h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select File
+                      Select File (CSV, Excel)
                     </label>
                     <input
                       type="file"
+                      accept=".csv,.xlsx,.xls"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2563EB] file:text-white hover:file:bg-[#1d4ed8]"
                     />
+                    {selectedFile && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
                   </div>
                   
-                  <div className="flex space-x-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button
                       onClick={() => handleFileUpload('college_data')}
                       disabled={!selectedFile || loadingOperations.fileUpload}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                     >
-                      Upload as College Data
+                      {loadingOperations.fileUpload ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      ) : (
+                        <Building2 className="w-4 h-4 mr-2" />
+                      )}
+                      Process as College Data
                     </button>
                     <button
                       onClick={() => handleFileUpload('event_data')}
                       disabled={!selectedFile || loadingOperations.fileUpload}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-3 rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                     >
-                      Upload as Event Data
+                      {loadingOperations.fileUpload ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      ) : (
+                        <Calendar className="w-4 h-4 mr-2" />
+                      )}
+                      Process as Event Data
                     </button>
                     <button
                       onClick={() => handleFileUpload('keam_data')}
                       disabled={!selectedFile || loadingOperations.fileUpload}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-3 rounded-lg hover:from-purple-700 hover:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                     >
-                      Upload as KEAM Data
+                      {loadingOperations.fileUpload ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      ) : (
+                        <FileText className="w-4 h-4 mr-2" />
+                      )}
+                      Process as KEAM Data
                     </button>
+                  </div>
+                  
+                  <div className="bg-blue-100 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">📋 File Processing Features:</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• <strong>College Data:</strong> Auto-detects and maps college information with AI-enhanced field recognition</li>
+                      <li>• <strong>KEAM Data:</strong> Intelligent parsing of course-wise cutoff ranks with trend analysis</li>
+                      <li>• <strong>Event Data:</strong> Structured event information processing</li>
+                      <li>• <strong>AI Integration:</strong> Automatic field generation and data validation</li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -1310,6 +1398,9 @@ const Admin = () => {
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
                         </th>
                       </tr>
                     </thead>
@@ -1338,6 +1429,20 @@ const Admin = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {new Date(upload.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => handleDeleteFileUpload(upload.id)}
+                              disabled={loadingOperations[`delete-file-${upload.id}`]}
+                              className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete Upload"
+                            >
+                              {loadingOperations[`delete-file-${upload.id}`] ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
                           </td>
                         </tr>
                       ))}

@@ -209,7 +209,7 @@ export interface FileUpload {
   file_size: number
   file_url: string
   upload_type: 'college_data' | 'event_data' | 'keam_data' | 'other'
-  status: 'uploaded' | 'processed' | 'failed'
+  status: 'uploaded' | 'processing' | 'processed' | 'failed'
   metadata: Record<string, any>
   created_at: string
 }

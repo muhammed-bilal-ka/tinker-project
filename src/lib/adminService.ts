@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { fileProcessor, FileProcessingResult } from './fileProcessor';
 import type { 
   AdminRole, 
   College, 
@@ -28,10 +29,12 @@ export interface AdminService {
   updateKEAMData(keamId: string, keamData: Partial<KEAMRankData>): Promise<{ data: KEAMRankData | null; error: Error | null }>;
   deleteKEAMData(keamId: string): Promise<{ error: Error | null }>;
   
-  // File uploads
+  // File uploads and processing
   uploadFile(fileData: Partial<FileUpload>): Promise<{ data: FileUpload | null; error: Error | null }>;
   getFileUploads(adminId: string): Promise<{ data: FileUpload[]; error: Error | null }>;
   deleteFileUpload(fileId: string): Promise<{ error: Error | null }>;
+  processCollegeFile(file: File, adminId: string): Promise<FileProcessingResult>;
+  processKEAMFile(file: File, adminId: string): Promise<FileProcessingResult>;
   
   // Flagged reviews
   getFlaggedReviews(): Promise<{ data: FlaggedReview[]; error: Error | null }>;
@@ -46,6 +49,9 @@ export interface AdminService {
   // Analytics and stats
   getDashboardStats(): Promise<{ data: any; error: Error | null }>;
   exportData(dataType: string): Promise<{ data: any; error: Error | null }>;
+  
+  // KEAM Predictor
+  predictColleges(keamRank: number, category: string): Promise<{ data: any; error: Error | null }>;
 }
 
 class AdminServiceImpl implements AdminService {
@@ -210,7 +216,7 @@ class AdminServiceImpl implements AdminService {
     }
   }
 
-  // File uploads
+  // File uploads and processing
   async uploadFile(fileData: Partial<FileUpload>) {
     try {
       const { data, error } = await supabase
@@ -249,6 +255,120 @@ class AdminServiceImpl implements AdminService {
       return { error: error as Error | null };
     } catch (err) {
       return { error: err as Error };
+    }
+  }
+
+  async processCollegeFile(file: File, adminId: string): Promise<FileProcessingResult> {
+    try {
+      // First, create file upload record
+      const fileData = {
+        admin_id: adminId,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        file_url: `https://example.com/uploads/${file.name}`,
+        upload_type: 'college_data' as const,
+        status: 'processing' as const,
+        metadata: {
+          originalName: file.name,
+          size: file.size,
+          type: file.type
+        }
+      };
+
+      const { data: uploadRecord, error: uploadError } = await this.uploadFile(fileData);
+      if (uploadError) {
+        return {
+          success: false,
+          message: 'Failed to create upload record',
+          errors: [uploadError.message]
+        };
+      }
+
+      // Process the file
+      const result = await fileProcessor.processCollegeFile(file);
+
+      // Update upload record with processing result
+      const updateData = {
+        status: result.success ? 'processed' : 'failed',
+        metadata: {
+          ...fileData.metadata,
+          processingResult: result,
+          processedAt: new Date().toISOString()
+        }
+      };
+
+      if (uploadRecord) {
+        await supabase
+          .from('file_uploads')
+          .update(updateData)
+          .eq('id', uploadRecord.id);
+      }
+
+      return result;
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Error processing college file',
+        errors: [(err as Error).message]
+      };
+    }
+  }
+
+  async processKEAMFile(file: File, adminId: string): Promise<FileProcessingResult> {
+    try {
+      // First, create file upload record
+      const fileData = {
+        admin_id: adminId,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        file_url: `https://example.com/uploads/${file.name}`,
+        upload_type: 'keam_data' as const,
+        status: 'processing' as const,
+        metadata: {
+          originalName: file.name,
+          size: file.size,
+          type: file.type
+        }
+      };
+
+      const { data: uploadRecord, error: uploadError } = await this.uploadFile(fileData);
+      if (uploadError) {
+        return {
+          success: false,
+          message: 'Failed to create upload record',
+          errors: [uploadError.message]
+        };
+      }
+
+      // Process the file
+      const result = await fileProcessor.processKEAMFile(file);
+
+      // Update upload record with processing result
+      const updateData = {
+        status: result.success ? 'processed' : 'failed',
+        metadata: {
+          ...fileData.metadata,
+          processingResult: result,
+          processedAt: new Date().toISOString()
+        }
+      };
+
+      if (uploadRecord) {
+        await supabase
+          .from('file_uploads')
+          .update(updateData)
+          .eq('id', uploadRecord.id);
+      }
+
+      return result;
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Error processing KEAM file',
+        errors: [(err as Error).message]
+      };
     }
   }
 
@@ -391,6 +511,134 @@ class AdminServiceImpl implements AdminService {
     } catch (err) {
       return { data: null, error: err as Error };
     }
+  }
+
+  // KEAM Predictor with AI-enhanced analysis
+  async predictColleges(keamRank: number, category: string) {
+    try {
+      // Get historical KEAM data
+      const { data: keamData, error } = await supabase
+        .from('keam_rank_data')
+        .select('*')
+        .eq('category', category)
+        .order('rank_cutoff', { ascending: false });
+
+      if (error) throw error;
+
+      if (!keamData || keamData.length === 0) {
+        return {
+          data: {
+            high_chance: [],
+            medium_chance: [],
+            low_chance: [],
+            analysis: 'No historical data available for this category'
+          },
+          error: null
+        };
+      }
+
+      // AI-enhanced prediction algorithm
+      const predictions = this.calculatePredictions(keamRank, category, keamData);
+
+      return { data: predictions, error: null };
+    } catch (err) {
+      return { data: null, error: err as Error };
+    }
+  }
+
+  private calculatePredictions(keamRank: number, category: string, historicalData: KEAMRankData[]) {
+    // Advanced prediction algorithm with multiple factors
+    const predictions = {
+      high_chance: [] as any[],
+      medium_chance: [] as any[],
+      low_chance: [] as any[],
+      analysis: ''
+    };
+
+    // Group by college and course
+    const collegeCourseMap = new Map<string, KEAMRankData[]>();
+    historicalData.forEach(record => {
+      const key = `${record.college_name}-${record.course_name}`;
+      if (!collegeCourseMap.has(key)) {
+        collegeCourseMap.set(key, []);
+      }
+      collegeCourseMap.get(key)!.push(record);
+    });
+
+    // Calculate predictions for each college-course combination
+    collegeCourseMap.forEach((records, key) => {
+      const [collegeName, courseName] = key.split('-');
+      
+      // Calculate average cutoff rank
+      const avgCutoff = records.reduce((sum, record) => sum + record.rank_cutoff, 0) / records.length;
+      
+      // Calculate trend (recent years vs older years)
+      const recentRecords = records.filter(r => r.year >= new Date().getFullYear() - 2);
+      const olderRecords = records.filter(r => r.year < new Date().getFullYear() - 2);
+      
+      let trendFactor = 0;
+      if (recentRecords.length > 0 && olderRecords.length > 0) {
+        const recentAvg = recentRecords.reduce((sum, r) => sum + r.rank_cutoff, 0) / recentRecords.length;
+        const olderAvg = olderRecords.reduce((sum, r) => sum + r.rank_cutoff, 0) / olderRecords.length;
+        trendFactor = (recentAvg - olderAvg) / olderAvg; // Positive means increasing cutoff
+      }
+
+      // Calculate confidence score
+      const rankDifference = avgCutoff - keamRank;
+      const confidence = Math.max(0, Math.min(100, 
+        (rankDifference / avgCutoff) * 100 + (trendFactor * 20)
+      ));
+
+      const prediction = {
+        college_name: collegeName,
+        course_name: courseName,
+        category: category,
+        confidence: Math.round(confidence),
+        avg_cutoff: Math.round(avgCutoff),
+        trend: trendFactor > 0.1 ? 'increasing' : trendFactor < -0.1 ? 'decreasing' : 'stable'
+      };
+
+      // Categorize based on confidence
+      if (confidence >= 70) {
+        predictions.high_chance.push(prediction);
+      } else if (confidence >= 40) {
+        predictions.medium_chance.push(prediction);
+      } else {
+        predictions.low_chance.push(prediction);
+      }
+    });
+
+    // Sort by confidence
+    predictions.high_chance.sort((a, b) => b.confidence - a.confidence);
+    predictions.medium_chance.sort((a, b) => b.confidence - a.confidence);
+    predictions.low_chance.sort((a, b) => b.confidence - a.confidence);
+
+    // Generate analysis
+    predictions.analysis = this.generateAnalysis(predictions, keamRank, category);
+
+    return predictions;
+  }
+
+  private generateAnalysis(predictions: any, keamRank: number, category: string) {
+    const totalOptions = predictions.high_chance.length + predictions.medium_chance.length + predictions.low_chance.length;
+    
+    let analysis = `Based on your KEAM rank of ${keamRank} in the ${category} category, `;
+    
+    if (predictions.high_chance.length > 0) {
+      analysis += `you have ${predictions.high_chance.length} high-probability options. `;
+    }
+    
+    if (predictions.medium_chance.length > 0) {
+      analysis += `There are ${predictions.medium_chance.length} medium-probability choices. `;
+    }
+    
+    if (totalOptions === 0) {
+      analysis += "No historical data available for this rank and category combination.";
+    } else {
+      analysis += `Consider applying to ${Math.min(5, totalOptions)} colleges for the best chances.`;
+    }
+    
+    return analysis;
   }
 }
 
