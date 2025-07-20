@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Users, Building2, Calendar, FileText, Upload, 
   Settings, BarChart3, Shield, Plus, Edit, Trash2,
-  Download, Eye, CheckCircle, XCircle, AlertCircle
+  Download, Eye, CheckCircle, XCircle, AlertCircle,
+  UserPlus, UserMinus, RefreshCw, BarChart
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  adminService, 
   collegeService, 
   eventService, 
   keamService,
@@ -18,6 +18,8 @@ import {
   FileUpload,
   FlaggedReview
 } from '../lib/supabase';
+import { adminService } from '../lib/adminService';
+import { CollegeForm, EventForm, KEAMForm } from '../components/AdminForms';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -40,6 +42,16 @@ const Admin = () => {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showKeamForm, setShowKeamForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Edit states
+  const [editingCollege, setEditingCollege] = useState<College | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editingKeam, setEditingKeam] = useState<KEAMRankData | null>(null);
+  
+  // Additional data states
+  const [users, setUsers] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Check admin status on component mount
   useEffect(() => {
@@ -234,6 +246,306 @@ const Admin = () => {
     }
   };
 
+  // College management handlers
+  const handleCreateCollege = async (collegeData: Partial<College>) => {
+    try {
+      const { error } = await adminService.createCollege(collegeData);
+      
+      if (error) {
+        alert('Failed to create college');
+        return;
+      }
+
+      alert('College created successfully!');
+      setShowCollegeForm(false);
+      setEditingCollege(null);
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to create college');
+      console.error('Create college error:', err);
+    }
+  };
+
+  const handleUpdateCollege = async (collegeData: Partial<College>) => {
+    if (!editingCollege) return;
+
+    try {
+      const { error } = await adminService.updateCollege(editingCollege.id, collegeData);
+      
+      if (error) {
+        alert('Failed to update college');
+        return;
+      }
+
+      alert('College updated successfully!');
+      setShowCollegeForm(false);
+      setEditingCollege(null);
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to update college');
+      console.error('Update college error:', err);
+    }
+  };
+
+  const handleEditCollege = (college: College) => {
+    setEditingCollege(college);
+    setShowCollegeForm(true);
+  };
+
+  const handleViewCollege = (college: College) => {
+    // Navigate to college details page
+    navigate(`/colleges/${college.id}`);
+  };
+
+  // Event management handlers
+  const handleCreateEvent = async (eventData: Partial<Event>) => {
+    try {
+      const { error } = await adminService.createEvent(eventData);
+      
+      if (error) {
+        alert('Failed to create event');
+        return;
+      }
+
+      alert('Event created successfully!');
+      setShowEventForm(false);
+      setEditingEvent(null);
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to create event');
+      console.error('Create event error:', err);
+    }
+  };
+
+  const handleUpdateEvent = async (eventData: Partial<Event>) => {
+    if (!editingEvent) return;
+
+    try {
+      const { error } = await adminService.updateEvent(editingEvent.id, eventData);
+      
+      if (error) {
+        alert('Failed to update event');
+        return;
+      }
+
+      alert('Event updated successfully!');
+      setShowEventForm(false);
+      setEditingEvent(null);
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to update event');
+      console.error('Update event error:', err);
+    }
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setShowEventForm(true);
+  };
+
+  const handleViewEvent = (event: Event) => {
+    // Navigate to event details page
+    navigate(`/events/${event.id}`);
+  };
+
+  // KEAM data management handlers
+  const handleCreateKEAMData = async (keamData: Partial<KEAMRankData>) => {
+    try {
+      const { error } = await adminService.createKEAMData(keamData);
+      
+      if (error) {
+        alert('Failed to create KEAM data');
+        return;
+      }
+
+      alert('KEAM data created successfully!');
+      setShowKeamForm(false);
+      setEditingKeam(null);
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to create KEAM data');
+      console.error('Create KEAM data error:', err);
+    }
+  };
+
+  const handleUpdateKEAMData = async (keamData: Partial<KEAMRankData>) => {
+    if (!editingKeam) return;
+
+    try {
+      const { error } = await adminService.updateKEAMData(editingKeam.id, keamData);
+      
+      if (error) {
+        alert('Failed to update KEAM data');
+        return;
+      }
+
+      alert('KEAM data updated successfully!');
+      setShowKeamForm(false);
+      setEditingKeam(null);
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to update KEAM data');
+      console.error('Update KEAM data error:', err);
+    }
+  };
+
+  const handleEditKEAMData = (keamData: KEAMRankData) => {
+    setEditingKeam(keamData);
+    setShowKeamForm(true);
+  };
+
+  const handleDeleteKEAMData = async (keamId: string) => {
+    if (!confirm('Are you sure you want to delete this KEAM data?')) return;
+
+    try {
+      const { error } = await adminService.deleteKEAMData(keamId);
+      
+      if (error) {
+        alert('Failed to delete KEAM data');
+        return;
+      }
+
+      alert('KEAM data deleted successfully!');
+      await loadDashboardData();
+
+    } catch (err) {
+      alert('Failed to delete KEAM data');
+      console.error('Delete KEAM data error:', err);
+    }
+  };
+
+  // User management handlers
+  const handleLoadUsers = async () => {
+    try {
+      const { data, error } = await adminService.getUsers();
+      
+      if (error) {
+        console.error('Failed to load users:', error);
+        return;
+      }
+
+      setUsers(data || []);
+
+    } catch (err) {
+      console.error('Load users error:', err);
+    }
+  };
+
+  const handleUpdateUserRole = async (userId: string, role: string) => {
+    try {
+      const { error } = await adminService.updateUserRole(userId, role);
+      
+      if (error) {
+        alert('Failed to update user role');
+        return;
+      }
+
+      alert('User role updated successfully!');
+      await handleLoadUsers();
+
+    } catch (err) {
+      alert('Failed to update user role');
+      console.error('Update user role error:', err);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
+    try {
+      const { error } = await adminService.deleteUser(userId);
+      
+      if (error) {
+        alert('Failed to delete user');
+        return;
+      }
+
+      alert('User deleted successfully!');
+      await handleLoadUsers();
+
+    } catch (err) {
+      alert('Failed to delete user');
+      console.error('Delete user error:', err);
+    }
+  };
+
+  // Analytics and export handlers
+  const handleLoadStats = async () => {
+    setLoadingStats(true);
+    try {
+      const { data, error } = await adminService.getDashboardStats();
+      
+      if (error) {
+        console.error('Failed to load stats:', error);
+        return;
+      }
+
+      setStats(data);
+
+    } catch (err) {
+      console.error('Load stats error:', err);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  const handleExportData = async (dataType: string) => {
+    try {
+      const { data, error } = await adminService.exportData(dataType);
+      
+      if (error) {
+        alert('Failed to export data');
+        return;
+      }
+
+      // Create and download CSV file
+      const csvContent = convertToCSV(data);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${dataType}_export_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      alert(`${dataType} data exported successfully!`);
+
+    } catch (err) {
+      alert('Failed to export data');
+      console.error('Export data error:', err);
+    }
+  };
+
+  const convertToCSV = (data: any[]) => {
+    if (!data || data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')];
+    
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header];
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvRows.push(values.join(','));
+    }
+    
+    return csvRows.join('\n');
+  };
+
+  // Refresh data
+  const handleRefreshData = async () => {
+    await loadDashboardData();
+    await handleLoadStats();
+    await handleLoadUsers();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen py-8">
@@ -275,6 +587,7 @@ const Admin = () => {
     { id: 'colleges', name: 'Colleges', icon: Building2 },
     { id: 'events', name: 'Events', icon: Calendar },
     { id: 'keam', name: 'KEAM Data', icon: FileText },
+    { id: 'users', name: 'Users', icon: Users },
     { id: 'uploads', name: 'File Uploads', icon: Upload },
     { id: 'reviews', name: 'Flagged Reviews', icon: Shield },
     { id: 'settings', name: 'Settings', icon: Settings }
@@ -401,7 +714,17 @@ const Admin = () => {
 
               {/* Quick Actions */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                  <button
+                    onClick={handleRefreshData}
+                    className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200"
+                    title="Refresh all data"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => setShowCollegeForm(true)}
@@ -425,6 +748,34 @@ const Admin = () => {
                   >
                     <Plus className="w-6 h-6 text-gray-400 mr-2" />
                     <span className="text-gray-600">Add KEAM Data</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Export Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Data</h3>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => handleExportData('colleges')}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Colleges
+                  </button>
+                  <button
+                    onClick={() => handleExportData('events')}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Events
+                  </button>
+                  <button
+                    onClick={() => handleExportData('keam')}
+                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export KEAM Data
                   </button>
                 </div>
               </div>
@@ -487,15 +838,24 @@ const Admin = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button className="text-[#2563EB] hover:text-[#1d4ed8]">
+                            <button 
+                              onClick={() => handleViewCollege(college)}
+                              className="text-[#2563EB] hover:text-[#1d4ed8]"
+                              title="View College"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="text-green-600 hover:text-green-900">
+                            <button 
+                              onClick={() => handleEditCollege(college)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Edit College"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleDeleteCollege(college.id)}
                               className="text-red-600 hover:text-red-900"
+                              title="Delete College"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -565,15 +925,24 @@ const Admin = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button className="text-[#2563EB] hover:text-[#1d4ed8]">
+                            <button 
+                              onClick={() => handleViewEvent(event)}
+                              className="text-[#2563EB] hover:text-[#1d4ed8]"
+                              title="View Event"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="text-green-600 hover:text-green-900">
+                            <button 
+                              onClick={() => handleEditEvent(event)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Edit Event"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleDeleteEvent(event.id)}
                               className="text-red-600 hover:text-red-900"
+                              title="Delete Event"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -619,6 +988,9 @@ const Admin = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Cutoff Rank
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -640,6 +1012,107 @@ const Admin = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {data.rank_cutoff}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button 
+                              onClick={() => handleEditKEAMData(data)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Edit KEAM Data"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteKEAMData(data.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete KEAM Data"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-gray-900">Manage Users</h2>
+                <button
+                  onClick={handleLoadUsers}
+                  className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 flex items-center"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Load Users
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Full Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((user) => (
+                      <tr key={user.user_id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-[#2563EB] flex items-center justify-center">
+                                <span className="text-sm font-medium text-white">
+                                  {user.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {user.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {user.full_name || 'Not provided'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleUpdateUserRole(user.user_id, 'admin')}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Make Admin"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.user_id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete User"
+                            >
+                              <UserMinus className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -848,6 +1321,37 @@ const Admin = () => {
           )}
         </div>
       </div>
+
+      {/* Form Components */}
+      <CollegeForm
+        isOpen={showCollegeForm}
+        onClose={() => {
+          setShowCollegeForm(false);
+          setEditingCollege(null);
+        }}
+        onSubmit={editingCollege ? handleUpdateCollege : handleCreateCollege}
+        college={editingCollege}
+      />
+
+      <EventForm
+        isOpen={showEventForm}
+        onClose={() => {
+          setShowEventForm(false);
+          setEditingEvent(null);
+        }}
+        onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
+        event={editingEvent}
+      />
+
+      <KEAMForm
+        isOpen={showKeamForm}
+        onClose={() => {
+          setShowKeamForm(false);
+          setEditingKeam(null);
+        }}
+        onSubmit={editingKeam ? handleUpdateKEAMData : handleCreateKEAMData}
+        keamData={editingKeam}
+      />
     </div>
   );
 };
