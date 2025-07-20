@@ -90,9 +90,42 @@ class AdminServiceImpl implements AdminService {
   // College management
   async createCollege(collegeData: Partial<College>) {
     try {
+      // Transform the data to match the database schema
+      const transformedData: any = { ...collegeData };
+      
+      // Handle contact_info transformation
+      if (collegeData.contact_phone || collegeData.contact_email || collegeData.website) {
+        transformedData.contact_info = {
+          phone: collegeData.contact_phone || '',
+          email: collegeData.contact_email || '',
+          website: collegeData.website || ''
+        };
+        
+        // Remove individual fields to avoid conflicts
+        delete transformedData.contact_phone;
+        delete transformedData.contact_email;
+        delete transformedData.website;
+      }
+      
+      // Handle admission_info transformation
+      if (collegeData.fees_range) {
+        transformedData.admission_info = {
+          requirements: 'Standard admission requirements apply',
+          process: 'Merit-based admission process',
+          fees: collegeData.fees_range
+        };
+        
+        // Remove individual field to avoid conflicts
+        delete transformedData.fees_range;
+      }
+      
+      // Remove fields that don't exist in the database
+      delete transformedData.admission_info;
+      delete transformedData.contact_info;
+
       const { data, error } = await supabase
         .from('colleges')
-        .insert([collegeData])
+        .insert([transformedData])
         .select()
         .single();
 
@@ -104,9 +137,42 @@ class AdminServiceImpl implements AdminService {
 
   async updateCollege(collegeId: string, collegeData: Partial<College>) {
     try {
+      // Transform the data to match the database schema
+      const transformedData: any = { ...collegeData };
+      
+      // Handle contact_info transformation
+      if (collegeData.contact_phone || collegeData.contact_email || collegeData.website) {
+        transformedData.contact_info = {
+          phone: collegeData.contact_phone || '',
+          email: collegeData.contact_email || '',
+          website: collegeData.website || ''
+        };
+        
+        // Remove individual fields to avoid conflicts
+        delete transformedData.contact_phone;
+        delete transformedData.contact_email;
+        delete transformedData.website;
+      }
+      
+      // Handle admission_info transformation
+      if (collegeData.fees_range) {
+        transformedData.admission_info = {
+          requirements: 'Standard admission requirements apply',
+          process: 'Merit-based admission process',
+          fees: collegeData.fees_range
+        };
+        
+        // Remove individual field to avoid conflicts
+        delete transformedData.fees_range;
+      }
+      
+      // Remove fields that don't exist in the database
+      delete transformedData.admission_info;
+      delete transformedData.contact_info;
+
       const { data, error } = await supabase
         .from('colleges')
-        .update(collegeData)
+        .update(transformedData)
         .eq('id', collegeId)
         .select()
         .single();
@@ -133,9 +199,28 @@ class AdminServiceImpl implements AdminService {
   // Event management
   async createEvent(eventData: Partial<Event>) {
     try {
+      // Transform the data to match the database schema
+      const transformedData: any = { ...eventData };
+      
+      // Handle contact_info transformation
+      if (eventData.phone || eventData.email || eventData.website) {
+        transformedData.contact_info = {
+          phone: eventData.phone || '',
+          email: eventData.email || ''
+        };
+        
+        // Remove individual fields to avoid conflicts
+        delete transformedData.phone;
+        delete transformedData.email;
+        delete transformedData.website;
+      }
+      
+      // Remove fields that don't exist in the database
+      delete transformedData.contact_info;
+
       const { data, error } = await supabase
         .from('events')
-        .insert([eventData])
+        .insert([transformedData])
         .select()
         .single();
 
@@ -147,9 +232,28 @@ class AdminServiceImpl implements AdminService {
 
   async updateEvent(eventId: string, eventData: Partial<Event>) {
     try {
+      // Transform the data to match the database schema
+      const transformedData: any = { ...eventData };
+      
+      // Handle contact_info transformation
+      if (eventData.phone || eventData.email || eventData.website) {
+        transformedData.contact_info = {
+          phone: eventData.phone || '',
+          email: eventData.email || ''
+        };
+        
+        // Remove individual fields to avoid conflicts
+        delete transformedData.phone;
+        delete transformedData.email;
+        delete transformedData.website;
+      }
+      
+      // Remove fields that don't exist in the database
+      delete transformedData.contact_info;
+
       const { data, error } = await supabase
         .from('events')
-        .update(eventData)
+        .update(transformedData)
         .eq('id', eventId)
         .select()
         .single();
@@ -176,9 +280,29 @@ class AdminServiceImpl implements AdminService {
   // KEAM data management
   async createKEAMData(keamData: Partial<KEAMRankData>) {
     try {
+      // Transform the data to match the database schema
+      const transformedData: any = { ...keamData };
+      
+      // Ensure required fields are present and properly typed
+      if (transformedData.rank_cutoff && typeof transformedData.rank_cutoff === 'string') {
+        transformedData.rank_cutoff = parseInt(transformedData.rank_cutoff);
+      }
+      
+      if (transformedData.total_seats && typeof transformedData.total_seats === 'string') {
+        transformedData.total_seats = parseInt(transformedData.total_seats);
+      }
+      
+      if (transformedData.filled_seats && typeof transformedData.filled_seats === 'string') {
+        transformedData.filled_seats = parseInt(transformedData.filled_seats);
+      }
+      
+      if (transformedData.year && typeof transformedData.year === 'string') {
+        transformedData.year = parseInt(transformedData.year);
+      }
+
       const { data, error } = await supabase
         .from('keam_rank_data')
-        .insert([keamData])
+        .insert([transformedData])
         .select()
         .single();
 
@@ -190,9 +314,29 @@ class AdminServiceImpl implements AdminService {
 
   async updateKEAMData(keamId: string, keamData: Partial<KEAMRankData>) {
     try {
+      // Transform the data to match the database schema
+      const transformedData: any = { ...keamData };
+      
+      // Ensure required fields are present
+      if (transformedData.rank_cutoff && typeof transformedData.rank_cutoff === 'string') {
+        transformedData.rank_cutoff = parseInt(transformedData.rank_cutoff);
+      }
+      
+      if (transformedData.total_seats && typeof transformedData.total_seats === 'string') {
+        transformedData.total_seats = parseInt(transformedData.total_seats);
+      }
+      
+      if (transformedData.filled_seats && typeof transformedData.filled_seats === 'string') {
+        transformedData.filled_seats = parseInt(transformedData.filled_seats);
+      }
+      
+      if (transformedData.year && typeof transformedData.year === 'string') {
+        transformedData.year = parseInt(transformedData.year);
+      }
+
       const { data, error } = await supabase
         .from('keam_rank_data')
-        .update(keamData)
+        .update(transformedData)
         .eq('id', keamId)
         .select()
         .single();
