@@ -7,6 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Types for our database tables
 export interface College {
+  contact_info: { phone: string; email: string; website: string }
   id: string
   college_code: string
   name: string
