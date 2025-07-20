@@ -8,7 +8,7 @@ A comprehensive college discovery and management platform built with React, Type
 
 
 ### Netlify Deployment
-1. Go to seekgram.netlify.app for running
+1. Go to <seekgram.netlify.app> for running
 
 
 ## �� Key Features
