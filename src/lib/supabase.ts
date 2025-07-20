@@ -7,6 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Types for our database tables
 export interface College {
+  admission_info: { requirements: string; process: string; fees: string }
   contact_info: { phone: string; email: string; website: string }
   id: string
   college_code: string
@@ -71,6 +72,9 @@ export interface Review {
 
 // Event interfaces
 export interface Event {
+  max_participants: number
+  registration_required: boolean
+  contact_info: { phone: string; email: string }
   id: string
   title: string
   description: string
@@ -155,6 +159,8 @@ export interface AdminRole {
 }
 
 export interface KEAMRankData {
+  duration: string
+  fees: number
   id: string
   year: number
   college_code: string

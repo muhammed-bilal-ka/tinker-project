@@ -4,7 +4,8 @@ import {
   Users, Building2, Calendar, FileText, Upload, 
   Settings, BarChart3, Shield, Plus, Edit, Trash2,
   Download, Eye, CheckCircle, XCircle, AlertCircle,
-  UserPlus, UserMinus, RefreshCw, BarChart
+  UserPlus, UserMinus, RefreshCw, BarChart, Search,
+  Filter, MoreVertical, Clock, MapPin, Phone, Mail
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -52,6 +53,11 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Loading states for different operations
+  const [loadingOperations, setLoadingOperations] = useState<{[key: string]: boolean}>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   // Check admin status on component mount
   useEffect(() => {
@@ -107,20 +113,26 @@ const Admin = () => {
     if (!user) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, dashboard: true }));
+      
       // Load colleges
-      const { data: collegesData } = await collegeService.getColleges();
+      const { data: collegesData, error: collegesError } = await collegeService.getColleges();
+      if (collegesError) console.error('Error loading colleges:', collegesError);
       setColleges(collegesData || []);
 
       // Load events
-      const { data: eventsData } = await eventService.getEvents();
+      const { data: eventsData, error: eventsError } = await eventService.getEvents();
+      if (eventsError) console.error('Error loading events:', eventsError);
       setEvents(eventsData || []);
 
       // Load KEAM data
-      const { data: keamData } = await keamService.getKEAMRankData();
+      const { data: keamData, error: keamError } = await keamService.getKEAMRankData();
+      if (keamError) console.error('Error loading KEAM data:', keamError);
       setKeamData(keamData || []);
 
       // Load file uploads
-      const { data: uploadsData } = await adminService.getFileUploads(user.id);
+      const { data: uploadsData, error: uploadsError } = await adminService.getFileUploads(user.id);
+      if (uploadsError) console.error('Error loading file uploads:', uploadsError);
       setFileUploads(uploadsData || []);
 
       // Load flagged reviews (with error handling)
@@ -139,6 +151,8 @@ const Admin = () => {
 
     } catch (err) {
       console.error('Error loading dashboard data:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, dashboard: false }));
     }
   };
 
@@ -146,6 +160,8 @@ const Admin = () => {
     if (!selectedFile || !user) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, fileUpload: true }));
+      
       // In a real app, you'd upload to Supabase Storage first
       // For now, we'll simulate the upload
       const fileData = {
@@ -166,7 +182,7 @@ const Admin = () => {
       const { error } = await adminService.uploadFile(fileData);
       
       if (error) {
-        alert('Failed to upload file');
+        alert('Failed to upload file: ' + error.message);
         return;
       }
 
@@ -175,19 +191,23 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to upload file');
+      alert('Failed to upload file: ' + (err as Error).message);
       console.error('File upload error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, fileUpload: false }));
     }
   };
 
   const handleDeleteCollege = async (collegeId: string) => {
-    if (!confirm('Are you sure you want to delete this college?')) return;
+    if (!confirm('Are you sure you want to delete this college? This action cannot be undone.')) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, [`delete-college-${collegeId}`]: true }));
+      
       const { error } = await adminService.deleteCollege(collegeId);
       
       if (error) {
-        alert('Failed to delete college');
+        alert('Failed to delete college: ' + error.message);
         return;
       }
 
@@ -195,19 +215,23 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to delete college');
+      alert('Failed to delete college: ' + (err as Error).message);
       console.error('Delete college error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`delete-college-${collegeId}`]: false }));
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, [`delete-event-${eventId}`]: true }));
+      
       const { error } = await adminService.deleteEvent(eventId);
       
       if (error) {
-        alert('Failed to delete event');
+        alert('Failed to delete event: ' + error.message);
         return;
       }
 
@@ -215,8 +239,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to delete event');
+      alert('Failed to delete event: ' + (err as Error).message);
       console.error('Delete event error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`delete-event-${eventId}`]: false }));
     }
   };
 
@@ -224,6 +250,8 @@ const Admin = () => {
     if (!user) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, [`resolve-review-${reviewId}`]: true }));
+      
       const updateData = {
         status: status as any,
         resolved_by: user.id,
@@ -233,7 +261,7 @@ const Admin = () => {
       const { error } = await adminService.updateFlaggedReview(reviewId, updateData);
       
       if (error) {
-        alert('Failed to update review status');
+        alert('Failed to update review status: ' + error.message);
         return;
       }
 
@@ -241,18 +269,22 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to update review status');
+      alert('Failed to update review status: ' + (err as Error).message);
       console.error('Update review error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`resolve-review-${reviewId}`]: false }));
     }
   };
 
   // College management handlers
   const handleCreateCollege = async (collegeData: Partial<College>) => {
     try {
+      setLoadingOperations(prev => ({ ...prev, createCollege: true }));
+      
       const { error } = await adminService.createCollege(collegeData);
       
       if (error) {
-        alert('Failed to create college');
+        alert('Failed to create college: ' + error.message);
         return;
       }
 
@@ -262,8 +294,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to create college');
+      alert('Failed to create college: ' + (err as Error).message);
       console.error('Create college error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, createCollege: false }));
     }
   };
 
@@ -271,10 +305,12 @@ const Admin = () => {
     if (!editingCollege) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, updateCollege: true }));
+      
       const { error } = await adminService.updateCollege(editingCollege.id, collegeData);
       
       if (error) {
-        alert('Failed to update college');
+        alert('Failed to update college: ' + error.message);
         return;
       }
 
@@ -284,8 +320,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to update college');
+      alert('Failed to update college: ' + (err as Error).message);
       console.error('Update college error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, updateCollege: false }));
     }
   };
 
@@ -302,10 +340,12 @@ const Admin = () => {
   // Event management handlers
   const handleCreateEvent = async (eventData: Partial<Event>) => {
     try {
+      setLoadingOperations(prev => ({ ...prev, createEvent: true }));
+      
       const { error } = await adminService.createEvent(eventData);
       
       if (error) {
-        alert('Failed to create event');
+        alert('Failed to create event: ' + error.message);
         return;
       }
 
@@ -315,8 +355,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to create event');
+      alert('Failed to create event: ' + (err as Error).message);
       console.error('Create event error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, createEvent: false }));
     }
   };
 
@@ -324,10 +366,12 @@ const Admin = () => {
     if (!editingEvent) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, updateEvent: true }));
+      
       const { error } = await adminService.updateEvent(editingEvent.id, eventData);
       
       if (error) {
-        alert('Failed to update event');
+        alert('Failed to update event: ' + error.message);
         return;
       }
 
@@ -337,8 +381,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to update event');
+      alert('Failed to update event: ' + (err as Error).message);
       console.error('Update event error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, updateEvent: false }));
     }
   };
 
@@ -355,10 +401,12 @@ const Admin = () => {
   // KEAM data management handlers
   const handleCreateKEAMData = async (keamData: Partial<KEAMRankData>) => {
     try {
+      setLoadingOperations(prev => ({ ...prev, createKEAM: true }));
+      
       const { error } = await adminService.createKEAMData(keamData);
       
       if (error) {
-        alert('Failed to create KEAM data');
+        alert('Failed to create KEAM data: ' + error.message);
         return;
       }
 
@@ -368,8 +416,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to create KEAM data');
+      alert('Failed to create KEAM data: ' + (err as Error).message);
       console.error('Create KEAM data error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, createKEAM: false }));
     }
   };
 
@@ -377,10 +427,12 @@ const Admin = () => {
     if (!editingKeam) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, updateKEAM: true }));
+      
       const { error } = await adminService.updateKEAMData(editingKeam.id, keamData);
       
       if (error) {
-        alert('Failed to update KEAM data');
+        alert('Failed to update KEAM data: ' + error.message);
         return;
       }
 
@@ -390,8 +442,10 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to update KEAM data');
+      alert('Failed to update KEAM data: ' + (err as Error).message);
       console.error('Update KEAM data error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, updateKEAM: false }));
     }
   };
 
@@ -401,13 +455,15 @@ const Admin = () => {
   };
 
   const handleDeleteKEAMData = async (keamId: string) => {
-    if (!confirm('Are you sure you want to delete this KEAM data?')) return;
+    if (!confirm('Are you sure you want to delete this KEAM data? This action cannot be undone.')) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, [`delete-keam-${keamId}`]: true }));
+      
       const { error } = await adminService.deleteKEAMData(keamId);
       
       if (error) {
-        alert('Failed to delete KEAM data');
+        alert('Failed to delete KEAM data: ' + error.message);
         return;
       }
 
@@ -415,18 +471,23 @@ const Admin = () => {
       await loadDashboardData();
 
     } catch (err) {
-      alert('Failed to delete KEAM data');
+      alert('Failed to delete KEAM data: ' + (err as Error).message);
       console.error('Delete KEAM data error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`delete-keam-${keamId}`]: false }));
     }
   };
 
   // User management handlers
   const handleLoadUsers = async () => {
     try {
+      setLoadingOperations(prev => ({ ...prev, loadUsers: true }));
+      
       const { data, error } = await adminService.getUsers();
       
       if (error) {
         console.error('Failed to load users:', error);
+        alert('Failed to load users: ' + error.message);
         return;
       }
 
@@ -434,15 +495,20 @@ const Admin = () => {
 
     } catch (err) {
       console.error('Load users error:', err);
+      alert('Failed to load users: ' + (err as Error).message);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, loadUsers: false }));
     }
   };
 
   const handleUpdateUserRole = async (userId: string, role: string) => {
     try {
+      setLoadingOperations(prev => ({ ...prev, [`update-user-${userId}`]: true }));
+      
       const { error } = await adminService.updateUserRole(userId, role);
       
       if (error) {
-        alert('Failed to update user role');
+        alert('Failed to update user role: ' + error.message);
         return;
       }
 
@@ -450,8 +516,10 @@ const Admin = () => {
       await handleLoadUsers();
 
     } catch (err) {
-      alert('Failed to update user role');
+      alert('Failed to update user role: ' + (err as Error).message);
       console.error('Update user role error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`update-user-${userId}`]: false }));
     }
   };
 
@@ -459,10 +527,12 @@ const Admin = () => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
+      setLoadingOperations(prev => ({ ...prev, [`delete-user-${userId}`]: true }));
+      
       const { error } = await adminService.deleteUser(userId);
       
       if (error) {
-        alert('Failed to delete user');
+        alert('Failed to delete user: ' + error.message);
         return;
       }
 
@@ -470,8 +540,10 @@ const Admin = () => {
       await handleLoadUsers();
 
     } catch (err) {
-      alert('Failed to delete user');
+      alert('Failed to delete user: ' + (err as Error).message);
       console.error('Delete user error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`delete-user-${userId}`]: false }));
     }
   };
 
@@ -483,6 +555,7 @@ const Admin = () => {
       
       if (error) {
         console.error('Failed to load stats:', error);
+        alert('Failed to load stats: ' + error.message);
         return;
       }
 
@@ -490,6 +563,7 @@ const Admin = () => {
 
     } catch (err) {
       console.error('Load stats error:', err);
+      alert('Failed to load stats: ' + (err as Error).message);
     } finally {
       setLoadingStats(false);
     }
@@ -497,10 +571,12 @@ const Admin = () => {
 
   const handleExportData = async (dataType: string) => {
     try {
+      setLoadingOperations(prev => ({ ...prev, [`export-${dataType}`]: true }));
+      
       const { data, error } = await adminService.exportData(dataType);
       
       if (error) {
-        alert('Failed to export data');
+        alert('Failed to export data: ' + error.message);
         return;
       }
 
@@ -517,8 +593,10 @@ const Admin = () => {
       alert(`${dataType} data exported successfully!`);
 
     } catch (err) {
-      alert('Failed to export data');
+      alert('Failed to export data: ' + (err as Error).message);
       console.error('Export data error:', err);
+    } finally {
+      setLoadingOperations(prev => ({ ...prev, [`export-${dataType}`]: false }));
     }
   };
 
@@ -545,6 +623,28 @@ const Admin = () => {
     await handleLoadStats();
     await handleLoadUsers();
   };
+
+  // Filter and search functions
+  const filteredColleges = colleges.filter(college => {
+    const matchesSearch = college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         college.college_code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterType === 'all' || college.type === filterType;
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         event.organizer.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterType === 'all' || event.category === filterType;
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredKEAMData = keamData.filter(data => {
+    const matchesSearch = data.college_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         data.course_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterType === 'all' || data.category === filterType;
+    return matchesSearch && matchesFilter;
+  });
 
   if (loading) {
     return (
@@ -613,31 +713,48 @@ const Admin = () => {
           </div>
         </div>
 
-        {/* Debug Information */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-2">Debug Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p><strong>User ID:</strong> {user?.id}</p>
-              <p><strong>User Email:</strong> {user?.email}</p>
-              <p><strong>Is Logged In:</strong> {isLoggedIn ? 'Yes' : 'No'}</p>
+        {/* Search and Filter Bar */}
+        <div className="bg-white rounded-xl shadow-lg p-4 mb-8 border border-gray-100">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search colleges, events, or KEAM data..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-            <div>
-              <p><strong>Admin Role:</strong> {adminRole?.role || 'None'}</p>
-              <p><strong>Admin Active:</strong> {adminRole?.is_active ? 'Yes' : 'No'}</p>
-              <p><strong>Permissions:</strong> {permissions.join(', ') || 'None'}</p>
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Types</option>
+                <option value="engineering">Engineering</option>
+                <option value="medical">Medical</option>
+                <option value="arts">Arts</option>
+                <option value="commerce">Commerce</option>
+                <option value="science">Science</option>
+                <option value="academic">Academic</option>
+                <option value="cultural">Cultural</option>
+                <option value="sports">Sports</option>
+                <option value="technical">Technical</option>
+                <option value="workshop">Workshop</option>
+              </select>
             </div>
+            <button
+              onClick={handleRefreshData}
+              disabled={loadingOperations.dashboard}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loadingOperations.dashboard ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
-          <button
-            onClick={() => {
-              console.log('Current user:', user);
-              console.log('Admin role:', adminRole);
-              console.log('Permissions:', permissions);
-            }}
-            className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs hover:bg-yellow-700"
-          >
-            Log to Console
-          </button>
         </div>
 
         {/* Navigation Tabs */}
@@ -817,7 +934,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {colleges.map((college) => (
+                    {filteredColleges.map((college) => (
                       <tr key={college.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -854,10 +971,15 @@ const Admin = () => {
                             </button>
                             <button 
                               onClick={() => handleDeleteCollege(college.id)}
-                              className="text-red-600 hover:text-red-900"
+                              disabled={loadingOperations[`delete-college-${college.id}`]}
+                              className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete College"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {loadingOperations[`delete-college-${college.id}`] ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </button>
                           </div>
                         </td>
@@ -904,7 +1026,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {events.map((event) => (
+                    {filteredEvents.map((event) => (
                       <tr key={event.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -994,7 +1116,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {keamData.slice(0, 20).map((data) => (
+                    {filteredKEAMData.map((data) => (
                       <tr key={data.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {data.year}
@@ -1144,21 +1266,21 @@ const Admin = () => {
                   <div className="flex space-x-4">
                     <button
                       onClick={() => handleFileUpload('college_data')}
-                      disabled={!selectedFile}
+                      disabled={!selectedFile || loadingOperations.fileUpload}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Upload as College Data
                     </button>
                     <button
                       onClick={() => handleFileUpload('event_data')}
-                      disabled={!selectedFile}
+                      disabled={!selectedFile || loadingOperations.fileUpload}
                       className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Upload as Event Data
                     </button>
                     <button
                       onClick={() => handleFileUpload('keam_data')}
-                      disabled={!selectedFile}
+                      disabled={!selectedFile || loadingOperations.fileUpload}
                       className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Upload as KEAM Data
