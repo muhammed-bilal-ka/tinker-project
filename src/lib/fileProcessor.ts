@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { College, KEAMRankData } from './supabase';
+import { pdfProcessor, PDFProcessingResult } from './pdfProcessor';
 
 export interface FileProcessingResult {
   success: boolean;
@@ -7,10 +8,19 @@ export interface FileProcessingResult {
   data?: any[];
   errors?: string[];
   stats?: {
-    totalRecords: number;
-    processedRecords: number;
-    failedRecords: number;
-    duplicates: number;
+    totalRecords?: number;
+    processedRecords?: number;
+    failedRecords?: number;
+    duplicates?: number;
+    totalPages?: number;
+    processedPages?: number;
+    extractedText?: string;
+    parsedRecords?: number;
+  };
+  metadata?: {
+    pdfInfo?: any;
+    processingTime?: number;
+    aiConfidence?: number;
   };
 }
 
@@ -91,9 +101,10 @@ class FileProcessor {
     return this.parseCSV(file);
   }
 
-  private detectFileType(file: File): 'csv' | 'excel' {
+  private detectFileType(file: File): 'csv' | 'excel' | 'pdf' {
     const extension = file.name.split('.').pop()?.toLowerCase();
     if (extension === 'xlsx' || extension === 'xls') return 'excel';
+    if (extension === 'pdf') return 'pdf';
     return 'csv';
   }
 
@@ -429,6 +440,13 @@ class FileProcessor {
   async processCollegeFile(file: File): Promise<FileProcessingResult> {
     try {
       const fileType = this.detectFileType(file);
+      
+      // Handle PDF files
+      if (fileType === 'pdf') {
+        return await pdfProcessor.processCollegePDF(file);
+      }
+      
+      // Handle CSV/Excel files
       const rawData = fileType === 'csv' ? 
         await this.parseCSV(file) : 
         await this.parseExcel(file);
@@ -501,6 +519,13 @@ class FileProcessor {
   async processKEAMFile(file: File): Promise<FileProcessingResult> {
     try {
       const fileType = this.detectFileType(file);
+      
+      // Handle PDF files
+      if (fileType === 'pdf') {
+        return await pdfProcessor.processKEAMPDF(file);
+      }
+      
+      // Handle CSV/Excel files
       const rawData = fileType === 'csv' ? 
         await this.parseCSV(file) : 
         await this.parseExcel(file);

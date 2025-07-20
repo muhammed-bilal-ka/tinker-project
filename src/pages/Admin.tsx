@@ -1311,17 +1311,20 @@ const Admin = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select File (CSV, Excel)
+                      Select File (CSV, Excel, PDF)
                     </label>
                     <input
                       type="file"
-                      accept=".csv,.xlsx,.xls"
+                      accept=".csv,.xlsx,.xls,.pdf"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2563EB] file:text-white hover:file:bg-[#1d4ed8]"
                     />
                     {selectedFile && (
                       <p className="mt-2 text-sm text-gray-600">
                         Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        {selectedFile.name.toLowerCase().endsWith('.pdf') && (
+                          <span className="ml-2 text-blue-600 font-medium">📄 PDF - AI Processing Enabled</span>
+                        )}
                       </p>
                     )}
                   </div>
@@ -1371,7 +1374,9 @@ const Admin = () => {
                       <li>• <strong>College Data:</strong> Auto-detects and maps college information with AI-enhanced field recognition</li>
                       <li>• <strong>KEAM Data:</strong> Intelligent parsing of course-wise cutoff ranks with trend analysis</li>
                       <li>• <strong>Event Data:</strong> Structured event information processing</li>
-                      <li>• <strong>AI Integration:</strong> Automatic field generation and data validation</li>
+                      <li>• <strong>PDF Processing:</strong> Advanced AI-powered text extraction and intelligent data parsing from PDF files</li>
+                      <li>• <strong>AI Integration:</strong> Automatic field generation, data validation, and pattern recognition</li>
+                      <li>• <strong>Multi-Format Support:</strong> CSV, Excel, and PDF files with intelligent format detection</li>
                     </ul>
                   </div>
                 </div>

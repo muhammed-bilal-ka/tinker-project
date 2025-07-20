@@ -14,6 +14,7 @@ const Colleges = () => {
   const [hasMore, setHasMore] = useState(true);
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const COLLEGES_PER_PAGE = 15;
@@ -31,7 +32,7 @@ const Colleges = () => {
         type: selectedType === 'all' ? undefined : selectedType,
         location: selectedDistrict === 'all' ? undefined : selectedDistrict,
         search: searchTerm || undefined,
-        limit: COLLEGES_PER_PAGE * currentPage
+        limit: COLLEGES_PER_PAGE
       });
 
       if (error) {
@@ -39,19 +40,58 @@ const Colleges = () => {
         console.error('Error fetching colleges:', error);
       } else {
         setColleges(data);
-        setHasMore(data.length === COLLEGES_PER_PAGE * currentPage);
+        setHasMore(data.length === COLLEGES_PER_PAGE);
       }
       
       setLoading(false);
     };
 
     fetchColleges();
-  }, [searchTerm, selectedDistrict, selectedType, currentPage]);
+  }, [searchTerm, selectedDistrict, selectedType]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setColleges([]);
+    setHasMore(true);
   }, [searchTerm, selectedDistrict, selectedType]);
+
+  const handleShowMore = async () => {
+    if (loadingMore) return;
+    
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    
+    try {
+      const { data, error } = await collegeService.getColleges({
+        type: selectedType === 'all' ? undefined : selectedType,
+        location: selectedDistrict === 'all' ? undefined : selectedDistrict,
+        search: searchTerm || undefined,
+        limit: COLLEGES_PER_PAGE,
+        offset: (nextPage - 1) * COLLEGES_PER_PAGE
+      });
+
+      if (error) {
+        console.error('Error fetching more colleges:', error);
+        setError('Failed to load more colleges. Please try again.');
+      } else {
+        // Append new colleges to existing list
+        setColleges(prevColleges => [...prevColleges, ...data]);
+        setCurrentPage(nextPage);
+        setHasMore(data.length === COLLEGES_PER_PAGE);
+      }
+    } catch (err) {
+      console.error('Error in handleShowMore:', err);
+      setError('Failed to load more colleges. Please try again.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleDistrictFilter = (district: string) => {
+    setSelectedDistrict(district.toLowerCase());
+    setShowDistrictFilter(false);
+  };
 
   const filteredColleges = colleges.filter(college => {
     const matchesSearch = !searchTerm || 
@@ -63,15 +103,6 @@ const Colleges = () => {
     
     return matchesSearch && matchesDistrict && matchesType;
   });
-
-  const handleShowMore = () => {
-    setCurrentPage(prev => prev + 1);
-  };
-
-  const handleDistrictFilter = (district: string) => {
-    setSelectedDistrict(district.toLowerCase());
-    setShowDistrictFilter(false);
-  };
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -268,10 +299,28 @@ const Colleges = () => {
           <div className="text-center">
             <button 
               onClick={handleShowMore}
-              className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg"
+              disabled={loadingMore}
+              className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto space-x-2"
             >
-              Show More Colleges
+              {loadingMore ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#2563EB]"></div>
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <span>Show More Colleges</span>
+              )}
             </button>
+          </div>
+        )}
+
+        {/* Loading More Indicator */}
+        {loadingMore && (
+          <div className="text-center py-8">
+            <div className="inline-flex items-center space-x-2 text-gray-600">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2563EB]"></div>
+              <span>Loading more colleges...</span>
+            </div>
           </div>
         )}
 
