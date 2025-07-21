@@ -4,16 +4,18 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Star, Globe, Phone, Mail, Users, Calendar, Award, BookOpen, Edit, User } from 'lucide-react';
 import { collegeService, reviewService, type College, type Review } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useReviews } from '../contexts/ReviewsContext';
 
 const CollegeDetails = () => {
   const { id } = useParams();
   const { isLoggedIn, user } = useAuth();
+  const { reviews, loading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useReviews();
+  // Filter reviews for this college
+  const collegeReviews = reviews.filter(r => r.college_id === id && r.status === 'accepted');
   const [college, setCollege] = useState<College | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userReview, setUserReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewFormData, setReviewFormData] = useState({
     rating: 5,
@@ -44,20 +46,6 @@ const CollegeDetails = () => {
     fetchCollege();
   }, [id]);
 
-  // Fetch reviews
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (!id) return;
-      
-      setReviewsLoading(true);
-      const { data } = await reviewService.getReviews(id);
-      setReviews(data);
-      setReviewsLoading(false);
-    };
-
-    fetchReviews();
-  }, [id]);
-
   // Check if user has already reviewed
   useEffect(() => {
     const checkUserReview = async () => {
@@ -82,14 +70,13 @@ const CollegeDetails = () => {
         user_id: user.id,
         rating: reviewFormData.rating,
         review_text: reviewFormData.reviewText
-      });
+      } as Omit<Review, 'id' | 'created_at' | 'user_profiles'>);
 
       if (error) {
         console.error('Error submitting review:', error);
       } else {
         // Refresh reviews
-        const { data } = await reviewService.getReviews(id);
-        setReviews(data);
+        await refetchReviews();
         
         // Check user review again
         const { data: userReviewData } = await reviewService.getUserReview(id, user.id);
@@ -153,7 +140,7 @@ const CollegeDetails = () => {
     );
   }
 
-  if (error || !college) {
+  if (reviewsError || !college) {
     return (
       <div className="min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -167,7 +154,7 @@ const CollegeDetails = () => {
           <div className="text-center py-12">
             <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {error || 'College not found'}
+                {reviewsError || 'College not found'}
               </h3>
               <p className="text-gray-600 mb-4">
                 The college you're looking for doesn't exist or couldn't be loaded.
@@ -332,9 +319,9 @@ const CollegeDetails = () => {
                     </div>
                   ))}
                 </div>
-              ) : reviews.length > 0 ? (
+              ) : collegeReviews.length > 0 ? (
                 <div className="space-y-4">
-                  {reviews.map((review) => (
+                  {collegeReviews.map((review) => (
                     <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
                       <div className="flex items-start space-x-3">
                         {review.user_profiles?.avatar_url ? (

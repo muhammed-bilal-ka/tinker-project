@@ -1,53 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Calendar, MapPin, Users, Clock, ExternalLink } from 'lucide-react';
-import { eventService, Event } from '../lib/supabase';
+import { useEvents } from '../contexts/EventsContext';
 
 const Events = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedDate, setSelectedDate] = useState('all');
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch events from database
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await eventService.getEvents();
-        if (error) {
-          setError('Failed to load events');
-          console.error('Error fetching events:', error);
-        } else {
-          setEvents(data);
-        }
-      } catch (err) {
-        setError('Failed to load events');
-        console.error('Error fetching events:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
+  const { events, loading, error, refetch } = useEvents();
 
   // Get unique categories and locations from events
   const categories = ['All', ...Array.from(new Set(events.map(event => event.category)))];
   const locations = ['All', ...Array.from(new Set(events.map(event => event.location)))];
   const dateFilters = ['All', 'This Week', 'This Month', 'Next Month'];
 
+  // Remove local events state and fetching logic, rely on context
+  // Optionally, filter context.events based on search/filters
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
     const matchesLocation = selectedLocation === 'all' || event.location === selectedLocation;
-    
-    return matchesSearch && matchesCategory && matchesLocation;
+    const matchesSearch = !searchTerm ||
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (event.location && event.location.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Date filter logic can be added as needed
+    return matchesCategory && matchesLocation && matchesSearch;
   });
 
   const formatDate = (dateString: string) => {
@@ -149,12 +127,7 @@ const Events = () => {
             <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
               <h3 className="text-xl font-semibold text-red-600 mb-2">Error loading events</h3>
               <p className="text-gray-600 mb-4">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-[#2563EB] text-white px-6 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200"
-              >
-                Try Again
-              </button>
+              {/* Remove any refetch or reload buttons, as context handles updates. */}
             </div>
           </div>
         )}

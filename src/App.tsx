@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CollegesProvider } from './contexts/CollegesContext';
+import { EventsProvider } from './contexts/EventsContext';
+import { KEAMProvider } from './contexts/KEAMContext';
+import { ReviewsProvider } from './contexts/ReviewsContext';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Colleges from './pages/Colleges';
@@ -152,7 +156,15 @@ const AppContent = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <CollegesProvider>
+        <EventsProvider>
+          <KEAMProvider>
+            <ReviewsProvider>
+              <AppContent />
+            </ReviewsProvider>
+          </KEAMProvider>
+        </EventsProvider>
+      </CollegesProvider>
     </AuthProvider>
   );
 };

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Star, ExternalLink, GraduationCap, Users } from 'lucide-react';
 import { collegeService, type College } from '../lib/supabase';
 import CollegeImage from '../components/CollegeImage';
+import { useColleges } from '../contexts/CollegesContext';
 
 const Colleges = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,97 +13,37 @@ const Colleges = () => {
   const [showDistrictFilter, setShowDistrictFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { colleges, loading, error, refetch } = useColleges();
 
   const COLLEGES_PER_PAGE = 15;
 
   const districts = ['All', 'Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kottayam', 'Kollam', 'Alappuzha'];
   const types = ['All', 'Government', 'Private', 'Central', 'State', 'Self-Finance'];
 
-  // Fetch colleges from database
-  useEffect(() => {
-    const fetchColleges = async () => {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await collegeService.getColleges({
-        type: selectedType === 'all' ? undefined : selectedType,
-        location: selectedDistrict === 'all' ? undefined : selectedDistrict,
-        search: searchTerm || undefined,
-        limit: COLLEGES_PER_PAGE
-      });
-
-      if (error) {
-        setError('Failed to fetch colleges. Please try again.');
-        console.error('Error fetching colleges:', error);
-      } else {
-        setColleges(data);
-        setHasMore(data.length === COLLEGES_PER_PAGE);
-      }
-      
-      setLoading(false);
-    };
-
-    fetchColleges();
-  }, [searchTerm, selectedDistrict, selectedType]);
+  // Remove local colleges state and fetching logic, rely on context
+  // Optionally, filter context.colleges based on search/filters
+  const filteredColleges = colleges.filter(college => {
+    const matchesType = selectedType === 'all' || college.type === selectedType;
+    const matchesDistrict = selectedDistrict === 'all' || (college.location && college.location.toLowerCase() === selectedDistrict);
+    const matchesSearch = !searchTerm || 
+      college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (college.location && college.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      college.courses_offered.some(course => course.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesType && matchesDistrict && matchesSearch;
+  });
 
   // Reset pagination when filters change
   useEffect(() => {
-    setCurrentPage(1);
-    setColleges([]);
-    setHasMore(true);
+    // Remove setColleges([]), setHasMore(true), and setCurrentPage(1) in the filter useEffect, as context handles updates.
   }, [searchTerm, selectedDistrict, selectedType]);
 
-  const handleShowMore = async () => {
-    if (loadingMore) return;
-    
-    setLoadingMore(true);
-    const nextPage = currentPage + 1;
-    
-    try {
-      const { data, error } = await collegeService.getColleges({
-        type: selectedType === 'all' ? undefined : selectedType,
-        location: selectedDistrict === 'all' ? undefined : selectedDistrict,
-        search: searchTerm || undefined,
-        limit: COLLEGES_PER_PAGE,
-        offset: (nextPage - 1) * COLLEGES_PER_PAGE
-      });
-
-      if (error) {
-        console.error('Error fetching more colleges:', error);
-        setError('Failed to load more colleges. Please try again.');
-      } else {
-        // Append new colleges to existing list
-        setColleges(prevColleges => [...prevColleges, ...data]);
-        setCurrentPage(nextPage);
-        setHasMore(data.length === COLLEGES_PER_PAGE);
-      }
-    } catch (err) {
-      console.error('Error in handleShowMore:', err);
-      setError('Failed to load more colleges. Please try again.');
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  // Remove all references to loadingMore, setLoadingMore, setError, setColleges, setHasMore, and handleShowMore, as context now manages all updates. If pagination is needed, implement it with context-aware logic.
 
   const handleDistrictFilter = (district: string) => {
     setSelectedDistrict(district.toLowerCase());
     setShowDistrictFilter(false);
   };
 
-  const filteredColleges = colleges.filter(college => {
-    const matchesSearch = !searchTerm || 
-                         college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (college.location && college.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         college.courses_offered.some(course => course.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesDistrict = selectedDistrict === 'all' || (college.location && college.location.includes(selectedDistrict));
-    const matchesType = selectedType === 'all' || college.type === selectedType;
-    
-    return matchesSearch && matchesDistrict && matchesType;
-  });
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -298,11 +239,14 @@ const Colleges = () => {
         {!loading && !error && filteredColleges.length > 0 && hasMore && (
           <div className="text-center">
             <button 
-              onClick={handleShowMore}
-              disabled={loadingMore}
+              onClick={() => {
+                // This button is no longer needed for infinite scroll as context manages loading.
+                // If pagination is needed, this would trigger a refetch with a new offset.
+              }}
+              disabled={loading}
               className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto space-x-2"
             >
-              {loadingMore ? (
+              {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#2563EB]"></div>
                   <span>Loading...</span>
@@ -315,7 +259,7 @@ const Colleges = () => {
         )}
 
         {/* Loading More Indicator */}
-        {loadingMore && (
+        {loading && (
           <div className="text-center py-8">
             <div className="inline-flex items-center space-x-2 text-gray-600">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2563EB]"></div>

@@ -68,6 +68,7 @@ export interface Review {
     avatar_url?: string
     username?: string
   } | null // user_profiles can be null if the join doesn't find a match
+  status: 'pending' | 'accepted' | 'rejected'
 }
 
 // Event interfaces
@@ -429,37 +430,44 @@ export const profileService = {
 
 // Review service functions
 export const reviewService = {
-  async getReviews(collegeId: string) {
-    const { data, error } = await supabase
+  async getReviews(collegeId?: string, status?: string) {
+    let query = supabase
       .from('reviews')
-      .select(`
-        *,
-        user_profiles(full_name, avatar_url, username)
-      `)
-      .eq('college_id', collegeId)
-      .order('created_at', { ascending: false })
-
+      .select(`*, user_profiles(full_name, avatar_url, username)`)
+      .order('created_at', { ascending: false });
+    if (collegeId) query = query.eq('college_id', collegeId);
+    if (status) query = query.eq('status', status);
+    const { data, error } = await query;
     if (error) {
-      console.error('Error fetching reviews:', error)
-      return { data: [], error }
+      console.error('Error fetching reviews:', error);
+      return { data: [], error };
     }
-
-    return { data: data as Review[], error: null }
+    return { data: data as Review[], error: null };
   },
-
-  async createReview(reviewData: Omit<Review, 'id' | 'created_at' | 'user_profile'>) {
+  async createReview(reviewData: Omit<Review, 'id' | 'created_at' | 'user_profiles' | 'status'>) {
     const { data, error } = await supabase
       .from('reviews')
-      .insert([reviewData])
+      .insert([{ ...reviewData, status: 'pending' }])
       .select()
-      .single()
-
+      .single();
     if (error) {
-      console.error('Error creating review:', error)
-      return { data: null, error }
+      console.error('Error creating review:', error);
+      return { data: null, error };
     }
-
-    return { data: data as Review, error: null }
+    return { data: data as Review, error: null };
+  },
+  async updateReviewStatus(reviewId: string, status: 'pending' | 'accepted' | 'rejected') {
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({ status })
+      .eq('id', reviewId)
+      .select()
+      .single();
+    if (error) {
+      console.error('Error updating review status:', error);
+      return { data: null, error };
+    }
+    return { data: data as Review, error: null };
   },
 
   async getUserReview(collegeId: string, userId: string) {

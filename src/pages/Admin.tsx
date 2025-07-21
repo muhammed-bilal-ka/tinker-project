@@ -21,6 +21,11 @@ import {
 } from '../lib/supabase';
 import { adminService } from '../lib/adminService';
 import { CollegeForm, EventForm, KEAMForm } from '../components/AdminForms';
+import { useKEAM } from '../contexts/KEAMContext';
+import { reviewService } from '../lib/supabase';
+import { useReviews } from '../contexts/ReviewsContext';
+import { useColleges } from '../contexts/CollegesContext';
+import { useEvents } from '../contexts/EventsContext';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -32,11 +37,15 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   
   // Data states
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [keamData, setKeamData] = useState<KEAMRankData[]>([]);
+  const { colleges, refetch: refetchColleges } = useColleges();
+  const { events, refetch: refetchEvents } = useEvents();
+  const { keamData, loading: keamLoading, error: keamError, refetch: refetchKEAM } = useKEAM();
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
   const [flaggedReviews, setFlaggedReviews] = useState<FlaggedReview[]>([]);
+  const { reviews, refetch: refetchReviews } = useReviews();
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
+  const [reviewCollegeFilter, setReviewCollegeFilter] = useState('all');
+  const [reviewUserFilter, setReviewUserFilter] = useState('');
   
   // Form states
   const [showCollegeForm, setShowCollegeForm] = useState(false);
@@ -96,7 +105,7 @@ const Admin = () => {
         setPermissions(perms);
         
         // Load initial data
-        await loadDashboardData();
+        // await loadDashboardData(); // Removed as per edit hint
         
       } catch (err) {
         setError('Failed to verify admin status');
@@ -109,52 +118,7 @@ const Admin = () => {
     checkAdminStatus();
   }, [isLoggedIn, user]);
 
-  const loadDashboardData = async () => {
-    if (!user) return;
-
-    try {
-      setLoadingOperations(prev => ({ ...prev, dashboard: true }));
-      
-      // Load colleges
-      const { data: collegesData, error: collegesError } = await collegeService.getColleges();
-      if (collegesError) console.error('Error loading colleges:', collegesError);
-      setColleges(collegesData || []);
-
-      // Load events
-      const { data: eventsData, error: eventsError } = await eventService.getEvents();
-      if (eventsError) console.error('Error loading events:', eventsError);
-      setEvents(eventsData || []);
-
-      // Load KEAM data
-      const { data: keamData, error: keamError } = await keamService.getKEAMRankData();
-      if (keamError) console.error('Error loading KEAM data:', keamError);
-      setKeamData(keamData || []);
-
-      // Load file uploads
-      const { data: uploadsData, error: uploadsError } = await adminService.getFileUploads(user.id);
-      if (uploadsError) console.error('Error loading file uploads:', uploadsError);
-      setFileUploads(uploadsData || []);
-
-      // Load flagged reviews (with error handling)
-      try {
-        const { data: reviewsData, error: reviewsError } = await adminService.getFlaggedReviews();
-        if (reviewsError) {
-          console.warn('Could not load flagged reviews:', reviewsError);
-          setFlaggedReviews([]);
-        } else {
-          setFlaggedReviews(reviewsData || []);
-        }
-      } catch (reviewsErr) {
-        console.warn('Exception loading flagged reviews:', reviewsErr);
-        setFlaggedReviews([]);
-      }
-
-    } catch (err) {
-      console.error('Error loading dashboard data:', err);
-    } finally {
-      setLoadingOperations(prev => ({ ...prev, dashboard: false }));
-    }
-  };
+  // Remove handleRefreshData, loadDashboardData, and all calls to them, as well as any refresh buttons in the UI. Use context providers for real-time updates.
 
   const handleFileUpload = async (uploadType: string) => {
     if (!selectedFile || !user) return;
@@ -194,7 +158,7 @@ const Admin = () => {
 
         alert('File uploaded successfully!');
         setSelectedFile(null);
-        await loadDashboardData();
+        // await loadDashboardData(); // Removed as per edit hint
         return;
       }
 
@@ -218,7 +182,7 @@ const Admin = () => {
       }
 
       setSelectedFile(null);
-      await loadDashboardData();
+      // await loadDashboardData(); // Removed as per edit hint
 
     } catch (err) {
       alert('Failed to process file: ' + (err as Error).message);
@@ -242,7 +206,7 @@ const Admin = () => {
       }
 
       alert('File upload record deleted successfully!');
-      await loadDashboardData();
+      // await loadDashboardData(); // Removed as per edit hint
 
     } catch (err) {
       alert('Failed to delete file upload: ' + (err as Error).message);
@@ -266,7 +230,7 @@ const Admin = () => {
       }
 
       alert('College deleted successfully!');
-      await loadDashboardData();
+      await refetchColleges();
 
     } catch (err) {
       alert('Failed to delete college: ' + (err as Error).message);
@@ -290,7 +254,7 @@ const Admin = () => {
       }
 
       alert('Event deleted successfully!');
-      await loadDashboardData();
+      // await loadDashboardData(); // Removed as per edit hint
 
     } catch (err) {
       alert('Failed to delete event: ' + (err as Error).message);
@@ -320,7 +284,7 @@ const Admin = () => {
       }
 
       alert('Review status updated successfully!');
-      await loadDashboardData();
+      // await loadDashboardData(); // Removed as per edit hint
 
     } catch (err) {
       alert('Failed to update review status: ' + (err as Error).message);
@@ -345,7 +309,7 @@ const Admin = () => {
       alert('College created successfully!');
       setShowCollegeForm(false);
       setEditingCollege(null);
-      await loadDashboardData();
+      await refetchColleges();
 
     } catch (err) {
       alert('Failed to create college: ' + (err as Error).message);
@@ -371,7 +335,7 @@ const Admin = () => {
       alert('College updated successfully!');
       setShowCollegeForm(false);
       setEditingCollege(null);
-      await loadDashboardData();
+      await refetchColleges();
 
     } catch (err) {
       alert('Failed to update college: ' + (err as Error).message);
@@ -406,7 +370,7 @@ const Admin = () => {
       alert('Event created successfully!');
       setShowEventForm(false);
       setEditingEvent(null);
-      await loadDashboardData();
+      // await loadDashboardData(); // Removed as per edit hint
 
     } catch (err) {
       alert('Failed to create event: ' + (err as Error).message);
@@ -432,8 +396,7 @@ const Admin = () => {
       alert('Event updated successfully!');
       setShowEventForm(false);
       setEditingEvent(null);
-      await loadDashboardData();
-
+      await refetchEvents(); // Force refresh after update
     } catch (err) {
       alert('Failed to update event: ' + (err as Error).message);
       console.error('Update event error:', err);
@@ -467,7 +430,7 @@ const Admin = () => {
       alert('KEAM data created successfully!');
       setShowKeamForm(false);
       setEditingKeam(null);
-      await loadDashboardData();
+      await refetchKEAM();
 
     } catch (err) {
       alert('Failed to create KEAM data: ' + (err as Error).message);
@@ -493,7 +456,7 @@ const Admin = () => {
       alert('KEAM data updated successfully!');
       setShowKeamForm(false);
       setEditingKeam(null);
-      await loadDashboardData();
+      await refetchKEAM();
 
     } catch (err) {
       alert('Failed to update KEAM data: ' + (err as Error).message);
@@ -522,7 +485,7 @@ const Admin = () => {
       }
 
       alert('KEAM data deleted successfully!');
-      await loadDashboardData();
+      await refetchKEAM();
 
     } catch (err) {
       alert('Failed to delete KEAM data: ' + (err as Error).message);
@@ -672,11 +635,7 @@ const Admin = () => {
   };
 
   // Refresh data
-  const handleRefreshData = async () => {
-    await loadDashboardData();
-    await handleLoadStats();
-    await handleLoadUsers();
-  };
+  // handleRefreshData is removed as per edit hint.
 
   // Filter and search functions
   const filteredColleges = colleges.filter(college => {
@@ -699,6 +658,22 @@ const Admin = () => {
     const matchesFilter = filterType === 'all' || data.category === filterType;
     return matchesSearch && matchesFilter;
   });
+
+  const filteredAllReviews = reviews.filter(r => {
+    const statusMatch = reviewStatusFilter === 'all' || r.status === reviewStatusFilter;
+    const collegeMatch = reviewCollegeFilter === 'all' || r.college_id === reviewCollegeFilter;
+    const userMatch = !reviewUserFilter || (r.user_profiles?.full_name?.toLowerCase().includes(reviewUserFilter.toLowerCase()) || r.user_id === reviewUserFilter);
+    return statusMatch && collegeMatch && userMatch;
+  });
+
+  const handleAcceptReview = async (reviewId: string) => {
+    await reviewService.updateReviewStatus(reviewId, 'accepted');
+    await refetchReviews();
+  };
+  const handleRejectReview = async (reviewId: string) => {
+    await reviewService.updateReviewStatus(reviewId, 'rejected');
+    await refetchReviews();
+  };
 
   if (loading) {
     return (
@@ -744,6 +719,7 @@ const Admin = () => {
     { id: 'users', name: 'Users', icon: Users },
     { id: 'uploads', name: 'File Uploads', icon: Upload },
     { id: 'reviews', name: 'Flagged Reviews', icon: Shield },
+    { id: 'all-reviews', name: 'All Reviews', icon: Eye },
     { id: 'settings', name: 'Settings', icon: Settings }
   ];
 
@@ -800,14 +776,7 @@ const Admin = () => {
                 <option value="workshop">Workshop</option>
               </select>
             </div>
-            <button
-              onClick={handleRefreshData}
-              disabled={loadingOperations.dashboard}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loadingOperations.dashboard ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+            {/* Refresh button removed as per edit hint */}
           </div>
         </div>
 
@@ -887,14 +856,7 @@ const Admin = () => {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-                  <button
-                    onClick={handleRefreshData}
-                    className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200"
-                    title="Refresh all data"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                  </button>
+                  {/* Refresh button removed as per edit hint */}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
@@ -965,76 +927,35 @@ const Admin = () => {
                   Add College
                 </button>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        College
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Location
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Rating
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Affiliation</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredColleges.map((college) => (
                       <tr key={college.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{college.name}</div>
-                            <div className="text-sm text-gray-500">{college.college_code}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {college.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {college.location}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {college.rating}/5
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.college_code}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.type}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.location}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.rating}/5</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.affiliation}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{college.courses_offered?.join(', ')}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={() => handleViewCollege(college)}
-                              className="text-[#2563EB] hover:text-[#1d4ed8]"
-                              title="View College"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleEditCollege(college)}
-                              className="text-green-600 hover:text-green-900"
-                              title="Edit College"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteCollege(college.id)}
-                              disabled={loadingOperations[`delete-college-${college.id}`]}
-                              className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Delete College"
-                            >
-                              {loadingOperations[`delete-college-${college.id}`] ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </button>
+                            <button onClick={() => handleViewCollege(college)} className="text-[#2563EB] hover:text-[#1d4ed8]" title="View College"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => handleEditCollege(college)} className="text-green-600 hover:text-green-900" title="Edit College"><Edit className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteCollege(college.id)} disabled={loadingOperations[`delete-college-${college.id}`]} className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed" title="Delete College">{loadingOperations[`delete-college-${college.id}`] ? (<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>) : (<Trash2 className="w-4 h-4" />)}</button>
                           </div>
                         </td>
                       </tr>
@@ -1057,71 +978,33 @@ const Admin = () => {
                   Add Event
                 </button>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Event
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Location
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organizer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredEvents.map((event) => (
                       <tr key={event.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{event.title}</div>
-                            <div className="text-sm text-gray-500">{event.organizer}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            {event.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(event.date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {event.location}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{event.title}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{event.category}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{new Date(event.date).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{event.location}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{event.organizer}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{event.status}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={() => handleViewEvent(event)}
-                              className="text-[#2563EB] hover:text-[#1d4ed8]"
-                              title="View Event"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleEditEvent(event)}
-                              className="text-green-600 hover:text-green-900"
-                              title="Edit Event"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteEvent(event.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete Event"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <button onClick={() => handleViewEvent(event)} className="text-[#2563EB] hover:text-[#1d4ed8]" title="View Event"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => handleEditEvent(event)} className="text-green-600 hover:text-green-900" title="Edit Event"><Edit className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteEvent(event.id)} className="text-red-600 hover:text-red-900" title="Delete Event"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -1518,6 +1401,65 @@ const Admin = () => {
                     <p className="text-gray-500">No flagged reviews found.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'all-reviews' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-gray-900">All Reviews</h2>
+              <div className="flex flex-wrap gap-4 mb-4">
+                <select value={reviewStatusFilter} onChange={e => setReviewStatusFilter(e.target.value as any)} className="px-3 py-2 border rounded">
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <select value={reviewCollegeFilter} onChange={e => setReviewCollegeFilter(e.target.value)} className="px-3 py-2 border rounded">
+                  <option value="all">All Colleges</option>
+                  {colleges.map(college => (
+                    <option key={college.id} value={college.id}>{college.name}</option>
+                  ))}
+                </select>
+                <input type="text" value={reviewUserFilter} onChange={e => setReviewUserFilter(e.target.value)} placeholder="Filter by user name or ID" className="px-3 py-2 border rounded" />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredAllReviews.map(review => (
+                      <tr key={review.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">{colleges.find(c => c.id === review.college_id)?.name || review.college_id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{review.user_profiles?.full_name || review.user_id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{review.rating}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{review.review_text}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${review.status === 'accepted' ? 'bg-green-100 text-green-800' : review.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>{review.status}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {review.status === 'pending' && (
+                            <>
+                              <button onClick={() => handleAcceptReview(review.id)} className="text-green-600 hover:text-green-900 mr-2">Accept</button>
+                              <button onClick={() => handleRejectReview(review.id)} className="text-red-600 hover:text-red-900">Reject</button>
+                            </>
+                          )}
+                          {review.status === 'rejected' && (
+                            <button onClick={() => handleAcceptReview(review.id)} className="text-green-600 hover:text-green-900">Accept</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
