@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, MapPin, Star, ExternalLink, GraduationCap, Users } from 'lucide-react';
@@ -20,9 +20,8 @@ const Colleges = () => {
   const districts = ['All', 'Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kottayam', 'Kollam', 'Alappuzha'];
   const types = ['All', 'Government', 'Private', 'Central', 'State', 'Self-Finance'];
 
-  // Remove local colleges state and fetching logic, rely on context
-  // Optionally, filter context.colleges based on search/filters
-  const filteredColleges = colleges.filter(college => {
+  // Memoize filtered colleges
+  const filteredColleges = useMemo(() => colleges.filter(college => {
     const matchesType = selectedType === 'all' || college.type === selectedType;
     const matchesDistrict = selectedDistrict === 'all' || (college.location && college.location.toLowerCase() === selectedDistrict);
     const matchesSearch = !searchTerm || 
@@ -30,11 +29,16 @@ const Colleges = () => {
       (college.location && college.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
       college.courses_offered.some(course => course.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesType && matchesDistrict && matchesSearch;
-  });
+  }), [colleges, selectedType, selectedDistrict, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredColleges.length / COLLEGES_PER_PAGE);
+  const paginatedColleges = useMemo(() => filteredColleges.slice(0, currentPage * COLLEGES_PER_PAGE), [filteredColleges, currentPage]);
+  const hasMorePages = currentPage < totalPages;
 
   // Reset pagination when filters change
   useEffect(() => {
-    // Remove setColleges([]), setHasMore(true), and setCurrentPage(1) in the filter useEffect, as context handles updates.
+    setCurrentPage(1);
   }, [searchTerm, selectedDistrict, selectedType]);
 
   // Remove all references to loadingMore, setLoadingMore, setError, setColleges, setHasMore, and handleShowMore, as context now manages all updates. If pagination is needed, implement it with context-aware logic.
@@ -127,7 +131,7 @@ const Colleges = () => {
             <p className="text-red-600">{error}</p>
           ) : (
             <p className="text-gray-600">
-              Showing {filteredColleges.length} of {colleges.length} colleges
+              Showing {paginatedColleges.length} of {filteredColleges.length} colleges
             </p>
           )}
         </div>
@@ -155,7 +159,7 @@ const Colleges = () => {
         {/* College Cards */}
         {!loading && !error && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {filteredColleges.map((college) => (
+            {paginatedColleges.map((college) => (
               <div key={college.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                 <div className="relative">
                   <CollegeImage
@@ -236,13 +240,10 @@ const Colleges = () => {
         )}
 
         {/* Show More Button */}
-        {!loading && !error && filteredColleges.length > 0 && hasMore && (
+        {!loading && !error && paginatedColleges.length > 0 && hasMorePages && (
           <div className="text-center">
             <button 
-              onClick={() => {
-                // This button is no longer needed for infinite scroll as context manages loading.
-                // If pagination is needed, this would trigger a refetch with a new offset.
-              }}
+              onClick={() => setCurrentPage(prev => prev + 1)}
               disabled={loading}
               className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto space-x-2"
             >
@@ -269,7 +270,7 @@ const Colleges = () => {
         )}
 
         {/* No Results */}
-        {!loading && !error && filteredColleges.length === 0 && (
+        {!loading && !error && paginatedColleges.length === 0 && (
           <div className="text-center py-12">
             <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No colleges found</h3>

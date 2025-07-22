@@ -53,6 +53,7 @@ export interface UserProfile {
   consent: boolean
   created_at: string
   updated_at: string
+  avatar_url?: string
 }
 
 // Review interface
@@ -462,7 +463,7 @@ export const reviewService = {
       .update({ status })
       .eq('id', reviewId)
       .select()
-      .single();
+      .maybeSingle(); // changed from .single() to .maybeSingle()
     if (error) {
       console.error('Error updating review status:', error);
       return { data: null, error };
@@ -476,7 +477,7 @@ export const reviewService = {
       .select('*')
       .eq('college_id', collegeId)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle(); // was .single()
 
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching user review:', error)
@@ -484,8 +485,8 @@ export const reviewService = {
     }
 
     return { data: data as Review | null, error: null }
-  }
-}
+  },
+};
 
 // Event service functions
 export const eventService = {

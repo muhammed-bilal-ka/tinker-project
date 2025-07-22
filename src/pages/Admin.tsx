@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, Building2, Calendar, FileText, Upload, 
@@ -67,6 +67,59 @@ const Admin = () => {
   const [loadingOperations, setLoadingOperations] = useState<{[key: string]: boolean}>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+
+  // Pagination constants
+  const ITEMS_PER_PAGE = 15;
+
+  // Memoized and paginated colleges
+  const filteredColleges = useMemo(() => colleges.filter(college => {
+    const matchesSearch = college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         college.college_code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterType === 'all' || college.type === filterType;
+    return matchesSearch && matchesFilter;
+  }), [colleges, searchTerm, filterType]);
+  const [collegesPage, setCollegesPage] = useState(1);
+  const collegesTotalPages = Math.ceil(filteredColleges.length / ITEMS_PER_PAGE);
+  const paginatedColleges = useMemo(() => filteredColleges.slice((collegesPage - 1) * ITEMS_PER_PAGE, collegesPage * ITEMS_PER_PAGE), [filteredColleges, collegesPage]);
+
+  // Memoized and paginated events
+  const filteredEvents = useMemo(() => events.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         event.organizer.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterType === 'all' || event.category === filterType;
+    return matchesSearch && matchesFilter;
+  }), [events, searchTerm, filterType]);
+  const [eventsPage, setEventsPage] = useState(1);
+  const eventsTotalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const paginatedEvents = useMemo(() => filteredEvents.slice((eventsPage - 1) * ITEMS_PER_PAGE, eventsPage * ITEMS_PER_PAGE), [filteredEvents, eventsPage]);
+
+  // Memoized and paginated KEAM data
+  const filteredKEAMData = useMemo(() => keamData.filter(data => {
+    const matchesSearch = data.college_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         data.course_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterType === 'all' || data.category === filterType;
+    return matchesSearch && matchesFilter;
+  }), [keamData, searchTerm, filterType]);
+  const [keamPage, setKeamPage] = useState(1);
+  const keamTotalPages = Math.ceil(filteredKEAMData.length / ITEMS_PER_PAGE);
+  const paginatedKEAMData = useMemo(() => filteredKEAMData.slice((keamPage - 1) * ITEMS_PER_PAGE, keamPage * ITEMS_PER_PAGE), [filteredKEAMData, keamPage]);
+
+  // Memoized and paginated reviews
+  const filteredAllReviews = useMemo(() => reviews.filter(r => {
+    const statusMatch = reviewStatusFilter === 'all' || r.status === reviewStatusFilter;
+    const collegeMatch = reviewCollegeFilter === 'all' || r.college_id === reviewCollegeFilter;
+    const userMatch = !reviewUserFilter || (r.user_profiles?.full_name?.toLowerCase().includes(reviewUserFilter.toLowerCase()) || r.user_id === reviewUserFilter);
+    return statusMatch && collegeMatch && userMatch;
+  }), [reviews, reviewStatusFilter, reviewCollegeFilter, reviewUserFilter]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const reviewsTotalPages = Math.ceil(filteredAllReviews.length / ITEMS_PER_PAGE);
+  const paginatedAllReviews = useMemo(() => filteredAllReviews.slice((reviewsPage - 1) * ITEMS_PER_PAGE, reviewsPage * ITEMS_PER_PAGE), [filteredAllReviews, reviewsPage]);
+
+  // Reset page when filters/search change
+  useEffect(() => { setCollegesPage(1); }, [searchTerm, filterType]);
+  useEffect(() => { setEventsPage(1); }, [searchTerm, filterType]);
+  useEffect(() => { setKeamPage(1); }, [searchTerm, filterType]);
+  useEffect(() => { setReviewsPage(1); }, [reviewStatusFilter, reviewCollegeFilter, reviewUserFilter]);
 
   // Check admin status on component mount
   useEffect(() => {
@@ -638,34 +691,6 @@ const Admin = () => {
   // handleRefreshData is removed as per edit hint.
 
   // Filter and search functions
-  const filteredColleges = colleges.filter(college => {
-    const matchesSearch = college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         college.college_code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || college.type === filterType;
-    return matchesSearch && matchesFilter;
-  });
-
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.organizer.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || event.category === filterType;
-    return matchesSearch && matchesFilter;
-  });
-
-  const filteredKEAMData = keamData.filter(data => {
-    const matchesSearch = data.college_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         data.course_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || data.category === filterType;
-    return matchesSearch && matchesFilter;
-  });
-
-  const filteredAllReviews = reviews.filter(r => {
-    const statusMatch = reviewStatusFilter === 'all' || r.status === reviewStatusFilter;
-    const collegeMatch = reviewCollegeFilter === 'all' || r.college_id === reviewCollegeFilter;
-    const userMatch = !reviewUserFilter || (r.user_profiles?.full_name?.toLowerCase().includes(reviewUserFilter.toLowerCase()) || r.user_id === reviewUserFilter);
-    return statusMatch && collegeMatch && userMatch;
-  });
-
   const handleAcceptReview = async (reviewId: string) => {
     await reviewService.updateReviewStatus(reviewId, 'accepted');
     await refetchReviews();
@@ -710,6 +735,8 @@ const Admin = () => {
       </div>
     );
   }
+
+  console.log('Admin reviews:', reviews);
 
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
@@ -942,7 +969,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredColleges.map((college) => (
+                    {paginatedColleges.map((college) => (
                       <tr key={college.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">{college.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{college.college_code}</td>
@@ -962,6 +989,14 @@ const Admin = () => {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination Controls */}
+                {collegesTotalPages > 1 && (
+                  <div className="flex justify-center mt-4 space-x-2">
+                    <button onClick={() => setCollegesPage(p => Math.max(1, p - 1))} disabled={collegesPage === 1} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Prev</button>
+                    <span className="px-3 py-1">Page {collegesPage} of {collegesTotalPages}</span>
+                    <button onClick={() => setCollegesPage(p => Math.min(collegesTotalPages, p + 1))} disabled={collegesPage === collegesTotalPages} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Next</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -992,7 +1027,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredEvents.map((event) => (
+                    {paginatedEvents.map((event) => (
                       <tr key={event.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">{event.title}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{event.category}</td>
@@ -1011,6 +1046,14 @@ const Admin = () => {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination Controls */}
+                {eventsTotalPages > 1 && (
+                  <div className="flex justify-center mt-4 space-x-2">
+                    <button onClick={() => setEventsPage(p => Math.max(1, p - 1))} disabled={eventsPage === 1} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Prev</button>
+                    <span className="px-3 py-1">Page {eventsPage} of {eventsTotalPages}</span>
+                    <button onClick={() => setEventsPage(p => Math.min(eventsTotalPages, p + 1))} disabled={eventsPage === eventsTotalPages} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Next</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1053,7 +1096,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredKEAMData.map((data) => (
+                    {paginatedKEAMData.map((data) => (
                       <tr key={data.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {data.year}
@@ -1094,6 +1137,14 @@ const Admin = () => {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination Controls */}
+                {keamTotalPages > 1 && (
+                  <div className="flex justify-center mt-4 space-x-2">
+                    <button onClick={() => setKeamPage(p => Math.max(1, p - 1))} disabled={keamPage === 1} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Prev</button>
+                    <span className="px-3 py-1">Page {keamPage} of {keamTotalPages}</span>
+                    <button onClick={() => setKeamPage(p => Math.min(keamTotalPages, p + 1))} disabled={keamPage === keamTotalPages} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Next</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1436,7 +1487,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredAllReviews.map(review => (
+                    {paginatedAllReviews.map(review => (
                       <tr key={review.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">{colleges.find(c => c.id === review.college_id)?.name || review.college_id}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{review.user_profiles?.full_name || review.user_id}</td>
@@ -1460,6 +1511,14 @@ const Admin = () => {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination Controls */}
+                {reviewsTotalPages > 1 && (
+                  <div className="flex justify-center mt-4 space-x-2">
+                    <button onClick={() => setReviewsPage(p => Math.max(1, p - 1))} disabled={reviewsPage === 1} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Prev</button>
+                    <span className="px-3 py-1">Page {reviewsPage} of {reviewsTotalPages}</span>
+                    <button onClick={() => setReviewsPage(p => Math.min(reviewsTotalPages, p + 1))} disabled={reviewsPage === reviewsTotalPages} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">Next</button>
+                  </div>
+                )}
               </div>
             </div>
           )}

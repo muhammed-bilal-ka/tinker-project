@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { profileService, UserProfile } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { 
   User, Mail, Phone, MapPin, Edit, Save, X, Calendar, 
   GraduationCap, Briefcase, Shield, Star, Award, 
   Camera, Settings, Bell, Heart, BookOpen, Users
 } from 'lucide-react';
+import Cropper from 'react-easy-crop';
+import Modal from 'react-modal';
+import 'react-easy-crop/react-easy-crop.css';
 
 const Profile = () => {
   const { user, isLoggedIn } = useAuth();
@@ -21,12 +25,15 @@ const Profile = () => {
     profession: '',
     qualification: ''
   });
-
-  useEffect(() => {
-    if (isLoggedIn && user) {
-      loadProfile();
-    }
-  }, [isLoggedIn, user]);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -52,6 +59,88 @@ const Profile = () => {
       console.error('Error loading profile:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      loadProfile();
+    }
+  }, [isLoggedIn, user]);
+
+  useEffect(() => {
+    if (profile && profile.avatar_url) setAvatarUrl(profile.avatar_url);
+  }, [profile]);
+
+  const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setSelectedImage(e.target.files[0]);
+    setShowCropModal(true);
+    setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+  };
+
+  const getCroppedImg = async (imageSrc: string, crop: any): Promise<Blob> => {
+    const createImage = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new window.Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', error => reject(error));
+      image.setAttribute('crossOrigin', 'anonymous');
+      image.src = url;
+    });
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    if (ctx) {
+      ctx.drawImage(
+        image,
+        crop.x * scaleX,
+        crop.y * scaleY,
+        crop.width * scaleX,
+        crop.height * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height
+      );
+    }
+    return new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to create blob'));
+      }, 'image/jpeg');
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (!selectedImage || !croppedAreaPixels || !user) return;
+    setAvatarUploading(true);
+    try {
+      const croppedBlob = await getCroppedImg(previewUrl || '', croppedAreaPixels);
+      const fileExt = selectedImage.name.split('.').pop();
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const { data, error } = await supabase.storage.from('avatars').upload(fileName, croppedBlob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) throw error;
+      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const publicUrl = publicUrlData.publicUrl;
+      setAvatarUrl(publicUrl);
+      await profileService.updateProfile(user.id, { avatar_url: publicUrl } as any);
+      await loadProfile();
+      setShowCropModal(false);
+      setSelectedImage(null);
+      setPreviewUrl('');
+    } catch (err) {
+      alert('Failed to upload avatar.');
+      console.error('Avatar upload error:', err);
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -131,12 +220,22 @@ const Profile = () => {
             <div className="flex flex-col lg:flex-row items-center justify-between">
               <div className="flex items-center space-x-6 mb-6 lg:mb-0">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                    {profile?.full_name ? getInitials(profile.full_name) : user?.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
+                  <button type="button" onClick={() => avatarUrl && setShowAvatarModal(true)} className="focus:outline-none">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" />
+                  ) : (
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                      {profile?.full_name ? getInitials(profile.full_name) : user?.email?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  </button>
+                  {editing && (
+                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 cursor-pointer hover:bg-blue-700 transition-all duration-200">
+                      <Camera className="w-5 h-5" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={avatarUploading} />
+                    </label>
+                  )}
+                  {avatarUploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -457,6 +556,39 @@ const Profile = () => {
           </div>
         </div>
       </div>
+      {/* Avatar Crop Modal */}
+      <Modal isOpen={showCropModal} onRequestClose={() => setShowCropModal(false)} ariaHideApp={false} className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+          <h2 className="text-lg font-semibold mb-4">Crop your profile picture</h2>
+          <div className="relative w-full h-64 bg-gray-100">
+            {previewUrl ? (
+              <Cropper
+                image={previewUrl}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">No image selected</div>
+            )}
+          </div>
+          <div className="flex items-center justify-between mt-4">
+            <input type="range" min={1} max={3} step={0.1} value={zoom} onChange={e => setZoom(Number(e.target.value))} className="w-2/3" />
+            <button onClick={handleCropConfirm} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200" disabled={avatarUploading}>Save</button>
+            <button onClick={() => setShowCropModal(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-all duration-200">Cancel</button>
+          </div>
+        </div>
+      </Modal>
+      {/* Avatar Preview Modal */}
+      <Modal isOpen={showAvatarModal} onRequestClose={() => setShowAvatarModal(false)} ariaHideApp={false} className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-xs flex flex-col items-center">
+          <img src={avatarUrl || ''} alt="Avatar Preview" className="w-64 h-64 rounded-full object-cover mb-4" />
+          <button onClick={() => setShowAvatarModal(false)} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200">Close</button>
+        </div>
+      </Modal>
     </div>
   );
 };

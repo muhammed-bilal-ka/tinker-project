@@ -140,6 +140,11 @@ const CollegeDetails = () => {
     );
   }
 
+  // Debug logging
+  console.log('College:', college);
+  console.log('reviewsError:', reviewsError);
+  console.log('reviews:', reviews);
+
   if (reviewsError || !college) {
     return (
       <div className="min-h-screen py-8">

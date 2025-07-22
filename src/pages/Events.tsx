@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Calendar, MapPin, Users, Clock, ExternalLink } from 'lucide-react';
 import { useEvents } from '../contexts/EventsContext';
@@ -15,9 +15,8 @@ const Events = () => {
   const locations = ['All', ...Array.from(new Set(events.map(event => event.location)))];
   const dateFilters = ['All', 'This Week', 'This Month', 'Next Month'];
 
-  // Remove local events state and fetching logic, rely on context
-  // Optionally, filter context.events based on search/filters
-  const filteredEvents = events.filter(event => {
+  // Memoize filtered events
+  const filteredEvents = useMemo(() => events.filter(event => {
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
     const matchesLocation = selectedLocation === 'all' || event.location === selectedLocation;
     const matchesSearch = !searchTerm ||
@@ -26,7 +25,19 @@ const Events = () => {
       (event.location && event.location.toLowerCase().includes(searchTerm.toLowerCase()));
     // Date filter logic can be added as needed
     return matchesCategory && matchesLocation && matchesSearch;
-  });
+  }), [events, selectedCategory, selectedLocation, searchTerm]);
+
+  // Pagination logic
+  const EVENTS_PER_PAGE = 15;
+  const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+  const [currentPage, setCurrentPage] = useState(1);
+  const paginatedEvents = useMemo(() => filteredEvents.slice((currentPage - 1) * EVENTS_PER_PAGE, currentPage * EVENTS_PER_PAGE), [filteredEvents, currentPage]);
+  const hasMorePages = currentPage < totalPages;
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedLocation]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -136,7 +147,7 @@ const Events = () => {
         {!loading && !error && (
           <div className="mb-6">
             <p className="text-gray-600">
-              Showing {filteredEvents.length} of {events.length} events
+              Showing {paginatedEvents.length} of {filteredEvents.length} events
             </p>
           </div>
         )}
@@ -205,7 +216,7 @@ const Events = () => {
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">All Events</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
+              {paginatedEvents.map((event) => (
                 <div key={event.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                   <div className="relative">
                     <img
@@ -266,16 +277,16 @@ const Events = () => {
         )}
 
         {/* Show More Button */}
-        {!loading && !error && filteredEvents.length > 0 && (
+        {!loading && !error && paginatedEvents.length > 0 && hasMorePages && (
           <div className="text-center">
-            <button className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg">
+            <button onClick={() => setCurrentPage(prev => prev + 1)} className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg">
               Show More Events
             </button>
           </div>
         )}
 
         {/* No Results */}
-        {!loading && !error && filteredEvents.length === 0 && (
+        {!loading && !error && paginatedEvents.length === 0 && (
           <div className="text-center py-12">
             <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
