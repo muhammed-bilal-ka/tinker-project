@@ -64,9 +64,9 @@ const Events = () => {
 
         {/* Search and Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -74,19 +74,19 @@ const Events = () => {
                   placeholder="Search events, locations, or topics..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-sm"
                 />
               </div>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
                 <Filter className="text-gray-400 w-5 h-5" />
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                  className="px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent w-full sm:w-auto text-sm"
                 >
                   {categories.map(category => (
                     <option key={category} value={category.toLowerCase()}>{category}</option>
@@ -94,11 +94,11 @@ const Events = () => {
                 </select>
               </div>
 
-              <div>
+              <div className="w-full sm:w-auto">
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                  className="px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent w-full sm:w-auto text-sm"
                 >
                   {locations.map(location => (
                     <option key={location} value={location.toLowerCase()}>{location}</option>
@@ -106,11 +106,11 @@ const Events = () => {
                 </select>
               </div>
 
-              <div>
+              <div className="w-full sm:w-auto">
                 <select
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                  className="px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent w-full sm:w-auto text-sm"
                 >
                   {dateFilters.map(dateFilter => (
                     <option key={dateFilter} value={dateFilter.toLowerCase()}>{dateFilter}</option>
@@ -156,50 +156,50 @@ const Events = () => {
         {!loading && !error && (
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Featured Events</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredEvents.filter(event => event.featured).map((event) => (
                 <div key={event.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                   <div className="relative">
                     <img
                       src={event.image_url || 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=400'}
                       alt={event.title}
-                      className="w-full h-48 object-cover"
+                      className="w-full h-40 sm:h-48 object-cover"
                     />
-                    <div className="absolute top-4 right-4 bg-[#2563EB] text-white px-3 py-1 rounded-full text-sm font-medium">
+                    <div className="absolute top-4 right-4 bg-[#2563EB] text-white px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                       Featured
                     </div>
                     <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                      <span className="text-sm font-medium text-gray-900">{event.category}</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">{event.category}</span>
                     </div>
                   </div>
                   
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{event.title}</h3>
-                    <p className="text-gray-600 mb-4">{event.description}</p>
+                  <div className="p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{event.title}</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm mb-4">{event.description}</p>
                     
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-gray-600">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{formatDate(event.date)} at {event.time}</span>
+                        <span className="text-xs sm:text-sm">{formatDate(event.date)}{event.time && <> at {event.time}</>}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{event.venue}, {event.location}</span>
+                        <span className="text-xs sm:text-sm">{event.venue}, {event.location}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <Users className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{event.current_attendees} attendees</span>
+                        <span className="text-xs sm:text-sm">{event.current_attendees} attendees</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-lg font-semibold text-[#2563EB]">{event.price}</span>
-                        <span className="text-sm text-gray-600">by {event.organizer}</span>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                      <div className="flex items-center space-x-2 sm:space-x-4">
+                        <span className="text-base sm:text-lg font-semibold text-[#2563EB]">{event.price}</span>
+                        <span className="text-xs sm:text-sm text-gray-600">by {event.organizer}</span>
                       </div>
                       <Link
                         to={`/events/${event.id}`}
-                        className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200"
+                        className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 text-xs sm:text-sm"
                       >
                         View Details
                       </Link>
@@ -215,45 +215,45 @@ const Events = () => {
         {!loading && !error && (
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">All Events</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedEvents.map((event) => (
                 <div key={event.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                   <div className="relative">
                     <img
                       src={event.image_url || 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=400'}
                       alt={event.title}
-                      className="w-full h-48 object-cover"
+                      className="w-full h-40 sm:h-48 object-cover"
                     />
                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                      <span className="text-sm font-medium text-gray-900">{event.category}</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">{event.category}</span>
                     </div>
                   </div>
                   
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{event.title}</h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
+                  <div className="p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{event.title}</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm mb-4 line-clamp-2">{event.description}</p>
                     
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-gray-600">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{formatDate(event.date)}</span>
+                        <span className="text-xs sm:text-sm">{formatDate(event.date)}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{event.location}</span>
+                        <span className="text-xs sm:text-sm">{event.location}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{event.time}</span>
+                        <span className="text-xs sm:text-sm">{event.time}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-semibold text-[#2563EB]">{event.price}</span>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                      <span className="text-base sm:text-lg font-semibold text-[#2563EB]">{event.price}</span>
                       <div className="flex items-center space-x-2">
                         <Link
                           to={`/events/${event.id}`}
-                          className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 text-sm"
+                          className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 text-xs sm:text-sm"
                         >
                           View Details
                         </Link>
@@ -262,7 +262,7 @@ const Events = () => {
                             href={event.registration_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#2563EB] hover:text-[#1d4ed8] transition-colors duration-200"
+                            className="text-[#2563EB] hover:text-[#1d4ed8] transition-colors duration-200 text-xs sm:text-sm"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
@@ -279,7 +279,7 @@ const Events = () => {
         {/* Show More Button */}
         {!loading && !error && paginatedEvents.length > 0 && hasMorePages && (
           <div className="text-center">
-            <button onClick={() => setCurrentPage(prev => prev + 1)} className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg">
+            <button onClick={() => setCurrentPage(prev => prev + 1)} className="bg-white text-[#2563EB] border-2 border-[#2563EB] px-8 py-3 rounded-xl font-semibold hover:bg-[#2563EB] hover:text-white transition-all duration-200 shadow-lg text-sm">
               Show More Events
             </button>
           </div>
@@ -298,7 +298,7 @@ const Events = () => {
                   setSelectedLocation('all');
                   setSelectedDate('all');
                 }}
-                className="bg-[#2563EB] text-white px-6 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200"
+                className="bg-[#2563EB] text-white px-6 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 text-sm"
               >
                 Clear Filters
               </button>

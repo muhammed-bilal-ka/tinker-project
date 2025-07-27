@@ -64,38 +64,38 @@ const KEAMPredictor = () => {
   };
 
   return (
-    <div className="min-h-screen py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-6 sm:py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <Calculator className="w-12 h-12 text-[#2563EB] mr-3" />
-            <h1 className="text-4xl font-bold text-gray-900">KEAM College Predictor</h1>
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="flex items-center justify-center mb-3 sm:mb-4">
+            <Calculator className="w-10 h-10 sm:w-12 sm:h-12 text-[#2563EB] mr-2 sm:mr-3" />
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">KEAM College Predictor</h1>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto">
             Get AI-powered predictions for your college admissions based on your KEAM rank and category. 
             Our algorithm analyzes historical data to provide accurate recommendations.
           </p>
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-            <TrendingUp className="w-12 h-12 text-green-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Historical Analysis</h3>
-            <p className="text-gray-600">Based on 4 years of KEAM rank data and trends</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 text-center">
+            <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-green-600 mx-auto mb-2 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Historical Analysis</h3>
+            <p className="text-gray-600 text-xs sm:text-base">Based on 4 years of KEAM rank data and trends</p>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-            <Target className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Accurate Predictions</h3>
-            <p className="text-gray-600">AI-powered algorithm with confidence scoring</p>
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 text-center">
+            <Target className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 mx-auto mb-2 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Accurate Predictions</h3>
+            <p className="text-gray-600 text-xs sm:text-base">AI-powered algorithm with confidence scoring</p>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 text-center">
-            <Award className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Comprehensive Results</h3>
-            <p className="text-gray-600">High, medium, and low chance colleges with courses</p>
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 text-center">
+            <Award className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600 mx-auto mb-2 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Comprehensive Results</h3>
+            <p className="text-gray-600 text-xs sm:text-base">High, medium, and low chance colleges with courses</p>
           </div>
         </div>
 

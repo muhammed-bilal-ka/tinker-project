@@ -4,17 +4,17 @@ import { Shield, Home, ArrowLeft } from 'lucide-react';
 
 const Unauthorized = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center py-8 sm:py-12 px-2 sm:px-4 md:px-6 lg:px-8">
       <div className="max-w-md w-full text-center">
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-8">
           {/* Error Code */}
-          <div className="mb-6">
-            <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center mb-4">
-              <Shield className="w-8 h-8 text-red-600" />
+          <div className="mb-4 sm:mb-6">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center mb-2 sm:mb-4">
+              <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
             </div>
-            <h1 className="text-4xl font-bold text-red-600 mb-2">401</h1>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Access Denied</h2>
-            <p className="text-gray-600 mb-6">
+            <h1 className="text-2xl sm:text-4xl font-bold text-red-600 mb-1 sm:mb-2">401</h1>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2 sm:mb-4">Access Denied</h2>
+            <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">
               You don't have permission to access this page. Please log in with appropriate credentials or contact an administrator.
             </p>
           </div>

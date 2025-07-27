@@ -63,9 +63,9 @@ const Colleges = () => {
 
         {/* Search and Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -73,22 +73,21 @@ const Colleges = () => {
                   placeholder="Search colleges, locations, or courses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-sm"
                 />
               </div>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="relative w-full sm:w-auto">
                 <button
                   onClick={() => setShowDistrictFilter(!showDistrictFilter)}
-                  className="flex items-center space-x-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent hover:bg-gray-50 transition-colors duration-200"
+                  className="flex items-center space-x-2 px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent hover:bg-gray-50 transition-colors duration-200 w-full sm:w-auto text-sm"
                 >
                   <Filter className="text-gray-400 w-5 h-5" />
                   <span>Filter by District</span>
                 </button>
-                
                 {showDistrictFilter && (
                   <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                     <div className="p-2">
@@ -108,11 +107,11 @@ const Colleges = () => {
                 )}
               </div>
 
-              <div>
+              <div className="w-full sm:w-auto">
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+                  className="px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent w-full sm:w-auto text-sm"
                 >
                   {types.map(type => (
                     <option key={type} value={type.toLowerCase()}>{type}</option>
@@ -158,7 +157,7 @@ const Colleges = () => {
 
         {/* College Cards */}
         {!loading && !error && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
             {paginatedColleges.map((college) => (
               <div key={college.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
                 <div className="relative">
@@ -166,11 +165,11 @@ const Colleges = () => {
                     imageUrl={college.image_url}
                     collegeName={college.name}
                     collegeType={college.type}
-                    className="w-full h-48"
+                    className="w-full h-40 sm:h-48"
                     size="lg"
                   />
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <span className={`text-sm font-medium ${
+                    <span className={`text-xs sm:text-sm font-medium ${
                       college.type === 'Government' ? 'text-green-600' :
                       college.type === 'Private' ? 'text-blue-600' :
                       college.type === 'Central' ? 'text-purple-600' :
@@ -182,21 +181,21 @@ const Colleges = () => {
                   </div>
                 </div>
                 
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{college.name}</h3>
+                <div className="p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{college.name}</h3>
                   
                   <div className="flex items-center text-gray-600 mb-2">
                     <MapPin className="w-4 h-4 mr-1" />
-                    <span className="text-sm">{college.location}</span>
+                    <span className="text-xs sm:text-sm">{college.location}</span>
                   </div>
                   
                   <div className="flex items-center mb-3">
                     <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                    <span className="text-sm font-medium">{college.rating}</span>
-                    <span className="text-gray-500 text-sm ml-2">({college.total_seats} seats)</span>
+                    <span className="text-xs sm:text-sm font-medium">{college.rating}</span>
+                    <span className="text-gray-500 text-xs sm:text-sm ml-2">({college.total_seats} seats)</span>
                   </div>
                   
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{college.description}</p>
+                  <p className="text-gray-600 text-xs sm:text-sm mb-4 line-clamp-2">{college.description}</p>
                   
                   <div className="mb-4">
                     <div className="flex flex-wrap gap-1">
@@ -213,10 +212,10 @@ const Colleges = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                     <Link
                       to={`/colleges/${college.id}`}
-                      className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 flex items-center space-x-2"
+                      className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 flex items-center space-x-2 text-sm"
                     >
                       <GraduationCap className="w-4 h-4" />
                       <span>View Details</span>
@@ -227,7 +226,7 @@ const Colleges = () => {
                         href={college.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#2563EB] hover:text-[#1d4ed8] transition-colors duration-200"
+                        className="text-[#2563EB] hover:text-[#1d4ed8] transition-colors duration-200 text-sm"
                       >
                         <ExternalLink className="w-5 h-5" />
                       </a>

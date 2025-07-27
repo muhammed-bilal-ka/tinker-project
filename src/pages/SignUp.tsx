@@ -42,7 +42,8 @@ const SignUp = () => {
       if (error) {
         setError(error.message);
       } else {
-        navigate('/complete-profile');
+        const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+        navigate('/complete-profile', { state: { fullName } });
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during signup');

@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { User, Phone, MapPin, GraduationCap, Briefcase, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { profileService } from '../lib/supabase';
 
 const CompleteProfile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isLoggedIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    fullName: '',
+    fullName: (location.state && location.state.fullName) || '',
     phone: '',
-    city: '',
-    pincode: '',
+    email: user?.email || '',
     profession: '',
     qualification: '',
+    city: '',
+    pincode: '',
     ugCollege: '',
     ugBranch: '',
     ugYear: '',
@@ -111,16 +113,17 @@ const CompleteProfile = () => {
         user_id: user.id,
         full_name: formData.fullName,
         phone: formData.phone,
-        city: formData.city,
-        pincode: formData.pincode,
+        email: user.email,
         profession: formData.profession,
         qualification: formData.qualification,
-        ug_college: formData.ugCollege || null,
-        ug_branch: formData.ugBranch || null,
-        ug_year: formData.ugYear || null,
-        pg_college: formData.pgCollege || null,
-        pg_branch: formData.pgBranch || null,
-        pg_year: formData.pgYear || null,
+        city: formData.city || '',
+        pincode: formData.pincode || '',
+        ug_college: formData.ugCollege || undefined,
+        ug_branch: formData.ugBranch || undefined,
+        ug_year: formData.ugYear || undefined,
+        pg_college: formData.pgCollege || undefined,
+        pg_branch: formData.pgBranch || undefined,
+        pg_year: formData.pgYear || undefined,
         consent: formData.consent
       };
 
@@ -142,10 +145,11 @@ const CompleteProfile = () => {
     setFormData({
       fullName: '',
       phone: '',
-      city: '',
-      pincode: '',
+      email: user?.email || '',
       profession: '',
       qualification: '',
+      city: '',
+      pincode: '',
       ugCollege: '',
       ugBranch: '',
       ugYear: '',
@@ -159,18 +163,16 @@ const CompleteProfile = () => {
   const showUGFields = formData.qualification === 'ug' || formData.qualification === 'pg';
   const showPGFields = formData.qualification === 'pg';
 
-  const isFormValid = formData.fullName && formData.phone && formData.city && 
-                     formData.pincode && formData.profession && formData.qualification && 
-                     formData.consent;
+  const isFormValid = formData.fullName && formData.phone && formData.email && formData.profession && formData.qualification;
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-6 sm:py-8">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">
             Complete Your Profile
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-base sm:text-xl text-gray-600">
             Help us personalize your SeekGram experience
           </p>
         </div>
@@ -251,6 +253,20 @@ const CompleteProfile = () => {
                       placeholder="Enter your phone number"
                     />
                   </div>
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    readOnly
+                    disabled
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  />
                 </div>
               </div>
             </div>

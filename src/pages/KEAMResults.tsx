@@ -131,14 +131,14 @@ const KEAMResults = () => {
   const { rank, category, prediction, timestamp } = predictionData;
 
   return (
-    <div className="min-h-screen py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-6 sm:py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8 border border-gray-100">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
             <button
               onClick={() => navigate('/keam-predictor')}
-              className="flex items-center text-[#2563EB] hover:text-[#1d4ed8] transition-colors duration-200"
+              className="flex items-center text-[#2563EB] hover:text-[#1d4ed8] transition-colors duration-200 text-sm sm:text-base"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Predictor
@@ -146,14 +146,14 @@ const KEAMResults = () => {
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleDownloadResults}
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm sm:text-base"
               >
                 <Download className="w-5 h-5 mr-2" />
                 Download
               </button>
               <button
                 onClick={handleShareResults}
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200 text-sm sm:text-base"
               >
                 <Share2 className="w-5 h-5 mr-2" />
                 Share

@@ -151,20 +151,20 @@ const EventDetails = () => {
             <img
               src={event.image_url || 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=800'}
               alt={event.title}
-              className="w-full h-64 md:h-80 object-cover"
+              className="w-full h-48 sm:h-64 md:h-80 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="bg-[#2563EB] px-3 py-1 rounded-full text-sm font-medium">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2">
+                <span className="bg-[#2563EB] px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                   {event.category}
                 </span>
-                <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
+                <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs sm:text-sm">
                   {event.price}
                 </span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{event.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-sm">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{event.title}</h1>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-1" />
                   <span>{formatDate(event.date)}</span>
@@ -182,15 +182,15 @@ const EventDetails = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             {/* Description */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">About This Event</h2>
-              <p className="text-gray-600 mb-4">{event.description}</p>
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">About This Event</h2>
+              <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">{event.description}</p>
               {event.full_description && (
-                <p className="text-gray-600">{event.full_description}</p>
+                <p className="text-gray-600 text-xs sm:text-base">{event.full_description}</p>
               )}
             </div>
 

@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { signInWithGoogleEnhanced, handleOAuthCallback, hasCompletedProfile } from '../lib/auth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { profileService } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileComplete, setProfileComplete] = useState<boolean>(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Get initial session
@@ -48,6 +53,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Enforce profile completion after login/signup
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (user) {
+        const { data } = await profileService.getProfile(user.id);
+        // Only require full_name, phone, email, profession, qualification (education)
+        const isComplete = !!(data && data.full_name && data.phone && user.email && data.profession && data.qualification);
+        setProfileComplete(isComplete);
+        if (!isComplete && location.pathname !== '/complete-profile') {
+          navigate('/complete-profile', { replace: true });
+        }
+      }
+    };
+    if (user) checkProfile();
+  }, [user, navigate, location]);
+
+  // Block all routes except /complete-profile if profile is incomplete
+  if (user && !profileComplete && location.pathname !== '/complete-profile') {
+    navigate('/complete-profile', { replace: true });
+    return null;
+  }
 
   const signInWithGoogle = async () => {
     try {

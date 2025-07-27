@@ -87,85 +87,75 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppContent = () => {
-  return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/colleges" element={<Colleges />} />
-            <Route path="/colleges/:id" element={<CollegeDetails />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/keam-predictor" element={<KEAMPredictor />} />
-            <Route path="/keam-results" element={<KEAMResults />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            
-            {/* Protected Routes */}
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/complete-profile" 
-              element={
-                <ProtectedRoute>
-                  <CompleteProfile />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Admin Routes - Only for database-fed admins */}
-            <Route 
-              path="/admin" 
-              element={
-                <ProtectedAdminRoute>
-                  <Admin />
-                </ProtectedAdminRoute>
-              } 
-            />
-            
-            {/* Admin Test Route - Only in development */}
-            {process.env.NODE_ENV === 'development' && (
-              <Route 
-                path="/admin-test" 
-                element={
-                  <ProtectedRoute>
-                    <AdminTest />
-                  </ProtectedRoute>
-                } 
-              />
-            )}
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
-  );
-};
-
 const App = () => {
   return (
-    <AuthProvider>
-      <CollegesProvider>
-        <EventsProvider>
-          <KEAMProvider>
-            <ReviewsProvider>
-              <AppContent />
-            </ReviewsProvider>
-          </KEAMProvider>
-        </EventsProvider>
-      </CollegesProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <CollegesProvider>
+          <EventsProvider>
+            <KEAMProvider>
+              <ReviewsProvider>
+                <div className="min-h-screen bg-gray-50">
+                  <Header />
+                  <main>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/colleges" element={<Colleges />} />
+                      <Route path="/colleges/:id" element={<CollegeDetails />} />
+                      <Route path="/events" element={<Events />} />
+                      <Route path="/events/:id" element={<EventDetails />} />
+                      <Route path="/keam-predictor" element={<KEAMPredictor />} />
+                      <Route path="/keam-results" element={<KEAMResults />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/signup" element={<SignUp />} />
+                      <Route path="/unauthorized" element={<Unauthorized />} />
+                      {/* Protected Routes */}
+                      <Route 
+                        path="/profile" 
+                        element={
+                          <ProtectedRoute>
+                            <Profile />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="/complete-profile" 
+                        element={
+                          <ProtectedRoute>
+                            <CompleteProfile />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      {/* Admin Routes - Only for database-fed admins */}
+                      <Route 
+                        path="/admin" 
+                        element={
+                          <ProtectedAdminRoute>
+                            <Admin />
+                          </ProtectedAdminRoute>
+                        } 
+                      />
+                      {/* Admin Test Route - Only in development */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <Route 
+                          path="/admin-test" 
+                          element={
+                            <ProtectedRoute>
+                              <AdminTest />
+                            </ProtectedRoute>
+                          } 
+                        />
+                      )}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+                </div>
+              </ReviewsProvider>
+            </KEAMProvider>
+          </EventsProvider>
+        </CollegesProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 

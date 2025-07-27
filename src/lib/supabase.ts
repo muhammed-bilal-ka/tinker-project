@@ -66,6 +66,7 @@ export interface Review {
   created_at: string
   user_profiles: {
     full_name: string
+    profession?: string
     avatar_url?: string
     username?: string
   } | null // user_profiles can be null if the join doesn't find a match
@@ -434,7 +435,7 @@ export const reviewService = {
   async getReviews(collegeId?: string, status?: string) {
     let query = supabase
       .from('reviews')
-      .select(`*, user_profiles(full_name, avatar_url, username)`)
+      .select(`*, user_profiles(full_name, profession, avatar_url, username)`)
       .order('created_at', { ascending: false });
     if (collegeId) query = query.eq('college_id', collegeId);
     if (status) query = query.eq('status', status);

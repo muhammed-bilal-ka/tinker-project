@@ -193,12 +193,12 @@ const CollegeDetails = () => {
             <img
               src={college.image_url || 'https://images.pexels.com/photos/207692/pexels-photo-207692.jpeg?auto=compress&cs=tinysrgb&w=800'}
               alt={college.name}
-              className="w-full h-64 md:h-80 object-cover"
+              className="w-full h-48 sm:h-64 md:h-80 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{college.name}</h1>
-              <div className="flex items-center space-x-4">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{college.name}</h1>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <div className="flex items-center">
                   <MapPin className="w-5 h-5 mr-2" />
                   <span>{college.location || 'Kerala'}</span>
@@ -207,7 +207,7 @@ const CollegeDetails = () => {
                   <Star className="w-5 h-5 mr-1 text-yellow-400" />
                   <span>{college.rating}</span>
                 </div>
-                <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
+                <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs sm:text-sm">
                   {college.type}
                 </span>
               </div>
@@ -215,20 +215,20 @@ const CollegeDetails = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">About</h2>
-              <p className="text-gray-600 leading-relaxed">{college.description}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">About</h2>
+              <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{college.description}</p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Courses Offered</h2>
-              <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">Courses Offered</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 {college.courses_offered.map((course, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                    <h3 className="font-semibold text-gray-900 mb-2">{course}</h3>
-                    <div className="text-sm text-gray-600 space-y-1">
+                  <div key={index} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow duration-200">
+                    <h3 className="font-semibold text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">{course}</h3>
+                    <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                       <p>Fees: {college.fees_range || 'Contact college for details'}</p>
                     </div>
                   </div>
@@ -236,25 +236,25 @@ const CollegeDetails = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Facilities</h2>
-              <div className="grid md:grid-cols-2 gap-3">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">Facilities</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                 {college.facilities.map((facility, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-[#2563EB] rounded-full"></div>
-                    <span className="text-gray-700">{facility}</span>
+                    <span className="text-gray-700 text-xs sm:text-base">{facility}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900">Reviews</h2>
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Reviews</h2>
                 {!userReview && (
                   <button
                     onClick={handleWriteReview}
-                    className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 flex items-center space-x-2"
+                    className="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200 flex items-center space-x-2 w-full sm:w-auto text-sm"
                   >
                     <Edit className="w-4 h-4" />
                     <span>Write a Review</span>
@@ -342,9 +342,14 @@ const CollegeDetails = () => {
                         )}
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-gray-900">
-                              {review.user_profiles?.full_name || 'Anonymous'}
-                            </span>
+                            <div>
+                              <span className="font-medium text-gray-900">
+                                {review.user_profiles?.full_name || 'Anonymous'}
+                              </span>
+                              {review.user_profiles?.profession && (
+                                <span className="block text-xs text-gray-500 mt-0.5">{review.user_profiles.profession}</span>
+                              )}
+                            </div>
                             <div className="flex items-center space-x-1">
                               {[...Array(5)].map((_, i) => (
                                 <Star

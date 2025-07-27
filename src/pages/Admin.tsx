@@ -770,25 +770,48 @@ const Admin = () => {
           </div>
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-xl shadow-lg p-2 mb-8 border border-gray-100 overflow-x-auto">
+          <nav className="flex space-x-1 min-w-[500px] sm:min-w-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-[#2563EB] text-white'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.name}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-xl shadow-lg p-4 mb-8 border border-gray-100">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1 relative">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex-1 relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search colleges, events, or KEAM data..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
               <Filter className="w-4 h-4 text-gray-400" />
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
               >
                 <option value="all">All Types</option>
                 <option value="engineering">Engineering</option>
@@ -803,31 +826,7 @@ const Admin = () => {
                 <option value="workshop">Workshop</option>
               </select>
             </div>
-            {/* Refresh button removed as per edit hint */}
           </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-lg p-2 mb-8 border border-gray-100">
-          <nav className="flex space-x-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'bg-[#2563EB] text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.name}</span>
-                </button>
-              );
-            })}
-          </nav>
         </div>
 
         {/* Dashboard Content */}
@@ -955,31 +954,31 @@ const Admin = () => {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-[600px] sm:min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Affiliation</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Affiliation</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
+                      <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {paginatedColleges.map((college) => (
                       <tr key={college.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">{college.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{college.college_code}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{college.type}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{college.location}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{college.rating}/5</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{college.affiliation}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{college.courses_offered?.join(', ')}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.name}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.college_code}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.type}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.location}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.rating}/5</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.affiliation}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">{college.courses_offered?.join(', ')}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                             <button onClick={() => handleViewCollege(college)} className="text-[#2563EB] hover:text-[#1d4ed8]" title="View College"><Eye className="w-4 h-4" /></button>
                             <button onClick={() => handleEditCollege(college)} className="text-green-600 hover:text-green-900" title="Edit College"><Edit className="w-4 h-4" /></button>
                             <button onClick={() => handleDeleteCollege(college.id)} disabled={loadingOperations[`delete-college-${college.id}`]} className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed" title="Delete College">{loadingOperations[`delete-college-${college.id}`] ? (<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>) : (<Trash2 className="w-4 h-4" />)}</button>
@@ -1490,7 +1489,12 @@ const Admin = () => {
                     {paginatedAllReviews.map(review => (
                       <tr key={review.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">{colleges.find(c => c.id === review.college_id)?.name || review.college_id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{review.user_profiles?.full_name || review.user_id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {review.user_profiles?.full_name || review.user_id}
+                          {review.user_profiles?.profession && (
+                            <span className="block text-xs text-gray-500">{review.user_profiles.profession}</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">{review.rating}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{review.review_text}</td>
                         <td className="px-6 py-4 whitespace-nowrap">

@@ -212,19 +212,19 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
         {/* Hero Section */}
-        <div className="relative mb-8">
+        <div className="relative mb-6 sm:mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl opacity-10"></div>
-          <div className="relative bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-            <div className="flex flex-col lg:flex-row items-center justify-between">
-              <div className="flex items-center space-x-6 mb-6 lg:mb-0">
+          <div className="relative bg-white rounded-3xl shadow-xl p-4 sm:p-8 border border-gray-100">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-0">
+              <div className="flex items-center space-x-4 sm:space-x-6 mb-4 sm:mb-6 lg:mb-0">
                 <div className="relative">
                   <button type="button" onClick={() => avatarUrl && setShowAvatarModal(true)} className="focus:outline-none">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" />
+                    <img src={avatarUrl} alt="Avatar" className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-lg" />
                   ) : (
-                    <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-lg">
                       {profile?.full_name ? getInitials(profile.full_name) : user?.email?.charAt(0).toUpperCase() || 'U'}
                     </div>
                   )}
@@ -238,27 +238,27 @@ const Profile = () => {
                   {avatarUploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
                     {profile?.full_name || 'Complete Your Profile'}
                   </h1>
-                  <p className="text-gray-600 mb-3">{user?.email}</p>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <p className="text-gray-600 mb-2 sm:mb-3 text-sm sm:text-base">{user?.email}</p>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500">
                       <Calendar className="w-4 h-4" />
                       <span>Member since {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      <span className="text-sm text-gray-600">Premium User</span>
+                      <span className="text-xs sm:text-sm text-gray-600">Premium User</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 {!editing && (
                   <button
                     onClick={() => setEditing(true)}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-sm sm:text-base"
                   >
                     <Edit className="w-5 h-5 mr-2" />
                     Edit Profile

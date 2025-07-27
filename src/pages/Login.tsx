@@ -57,18 +57,18 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center py-8 sm:py-12 px-2 sm:px-4 md:px-6 lg:px-8">
       <div className="max-w-md w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-6">
+        <div className="text-center mb-6 sm:mb-8">
+          <Link to="/" className="inline-flex items-center space-x-2 mb-4 sm:mb-6">
             <div className="w-10 h-10 bg-[#FACC15] rounded-lg flex items-center justify-center border-2 border-[#2563EB]/20">
               <span className="text-[#2563EB] font-bold">SG</span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">SeekGram</span>
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">SeekGram</span>
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your account to continue</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Welcome back</h2>
+          <p className="text-gray-600 text-sm sm:text-base">Sign in to your account to continue</p>
         </div>
 
         {/* Login Form */}
