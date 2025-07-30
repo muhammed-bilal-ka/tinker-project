@@ -2,8 +2,19 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY
+const appUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5174'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create Supabase client with additional options
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    // Set the site URL to match our application URL
+    site_url: appUrl
+  }
+})
 
 // Types for our database tables
 export interface College {

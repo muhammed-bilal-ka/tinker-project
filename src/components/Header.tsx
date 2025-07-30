@@ -1,15 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
+import { profileService } from '../lib/supabase';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [userFullName, setUserFullName] = useState<string>('');
   const location = useLocation();
   const { isLoggedIn, user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data } = await profileService.getProfile(user.id);
+          if (data?.full_name) {
+            setUserFullName(data.full_name);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user]);
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -66,7 +85,7 @@ const Header = () => {
                   className="flex items-center space-x-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-[#1d4ed8] transition-all duration-200"
                 >
                   <User className="w-4 h-4" />
-                  <span>{user?.email?.split('@')[0] || 'Profile'}</span>
+                  <span>{userFullName || user?.email?.split('@')[0] || 'Profile'}</span>
                 </button>
                 
                 {isUserMenuOpen && (
