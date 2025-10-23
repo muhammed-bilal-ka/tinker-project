@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_PUBLIC_SUPABASE_URL as string | undefined
+const supabaseAnonKey = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY as string | undefined
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Warn early in development when env vars are missing. Requests will fail if these are not set.
+  // Keep the client creation so the app can still import this module during build/tests.
+  // Casting to empty string below avoids a type error when building, but developers should set env vars.
+  console.warn('VITE_PUBLIC_SUPABASE_URL or VITE_PUBLIC_SUPABASE_ANON_KEY is not set. Supabase client may fail until configured.')
+}
+
+export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '')
 
 // Types for our database tables
 export interface College {
@@ -283,7 +290,9 @@ export const collegeService = {
     }
 
     if (filters?.search) {
-      query = query.or(`name.ilike.%${filters.search}%,location.ilike.%${filters.search}%,courses_offered.cs.["${filters.search}"]`)
+      // Use ilike on common text fields. Avoid array `cs` operator misuse which can cause query errors.
+      const term = `%${filters.search}%`
+      query = query.or(`name.ilike.${term},location.ilike.${term},description.ilike.${term}`)
     }
 
     if (filters?.limit) {
@@ -1067,7 +1076,7 @@ export const keamService = {
     })
 
     // Analyze each college-course combination
-    collegeCourseData.forEach((data, key) => {
+  collegeCourseData.forEach((data) => {
       if (data.length === 0) return
 
       // Calculate average cutoff and trend
