@@ -57,9 +57,18 @@ const SignUp = () => {
     setError('');
 
     try {
-      await signInWithGoogle();
-      // Note: The user will be redirected to Google OAuth
+      const result = await signInWithGoogle();
+      
+      // If not successful and not redirected, handle the error
+      if (!result.success) {
+        setError('Google signup failed. Please try again or use email signup.');
+        setLoading(false);
+        return;
+      }
+      
+      // Note: If successful, the user will be redirected to Google OAuth
       // The loading state will be handled by the auth state change
+      // We'll keep the loading state true since redirection is happening
     } catch (err: any) {
       console.error('Google signup error:', err);
       setError(err.message || 'An error occurred during Google signup. Please try again.');

@@ -31,9 +31,8 @@ const Login = () => {
       const { error } = await signInWithEmail(formData.email, formData.password);
       if (error) {
         setError(error.message);
-      } else {
-        navigate('/');
       }
+      // No navigation here - AuthContext will handle redirection based on profile completion
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
     } finally {
@@ -46,9 +45,18 @@ const Login = () => {
     setError('');
 
     try {
-      await signInWithGoogle();
-      // Note: The user will be redirected to Google OAuth
+      const result = await signInWithGoogle();
+      
+      // If not successful and not redirected, handle the error
+      if (!result.success) {
+        setError('Google login failed. Please try again or use email login.');
+        setLoading(false);
+        return;
+      }
+      
+      // Note: If successful, the user will be redirected to Google OAuth
       // The loading state will be handled by the auth state change
+      // We'll keep the loading state true since redirection is happening
     } catch (err: any) {
       console.error('Google login error:', err);
       setError(err.message || 'An error occurred during Google login. Please try again.');

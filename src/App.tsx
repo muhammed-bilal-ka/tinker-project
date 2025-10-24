@@ -21,6 +21,7 @@ import Admin from './pages/Admin';
 import AdminTest from './pages/AdminTest';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
+import AuthCallback from './pages/AuthCallback';
 import { adminService } from './lib/supabase';
 
 // Protected Route Component for Admin
@@ -109,6 +110,8 @@ const App = () => {
                       <Route path="/login" element={<Login />} />
                       <Route path="/signup" element={<SignUp />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
+                      {/* OAuth Callback Route */}
+                      <Route path="/auth/callback" element={<AuthCallback />} />
                       {/* Protected Routes */}
                       <Route 
                         path="/profile" 

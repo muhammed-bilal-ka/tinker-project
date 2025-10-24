@@ -58,9 +58,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkProfile = async () => {
       if (user) {
+        // Check if profile exists
         const { data } = await profileService.getProfile(user.id);
+        
+        // If no profile exists, create a basic one
+        if (!data) {
+          console.log('No profile found, creating basic profile');
+          // Import the function to create a basic profile
+          const { createUserProfileFromOAuth } = await import('../lib/auth');
+          await createUserProfileFromOAuth(user);
+          setProfileComplete(false);
+          if (location.pathname !== '/complete-profile') {
+            navigate('/complete-profile', { replace: true });
+          }
+          return;
+        }
+        
+        // Check if profile is complete
         // Only require full_name, phone, email, profession, qualification (education)
-        const isComplete = !!(data && data.full_name && data.phone && user.email && data.profession && data.qualification);
+        const isComplete = !!(data.full_name && data.phone && user.email && data.profession && data.qualification);
         setProfileComplete(isComplete);
         if (!isComplete && location.pathname !== '/complete-profile') {
           navigate('/complete-profile', { replace: true });
@@ -78,35 +94,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
+      // Show loading indicator or disable button here if needed
+      
+      // Try enhanced Google sign-in with fallback mechanisms
       const { data, error } = await signInWithGoogleEnhanced();
       
       if (error) {
-        console.error('Google OAuth error:', error);
+        console.error('Google OAuth error after all fallbacks:', error);
+        // Display user-friendly error message
+        alert('Unable to sign in with Google. Please try again or use email sign-in.');
         throw error;
       }
       
       // If successful, the user will be redirected to Google
-      console.log('Google OAuth initiated:', data);
+      console.log('Google OAuth initiated successfully:', data);
       
-    } catch (error) {
-      console.error('Google sign-in failed:', error);
-      throw error;
+      // Return success for UI handling
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Google sign-in completely failed:', error);
+      
+      // Provide user-friendly error message
+      const errorMessage = error?.message || 'Unable to sign in with Google. Please try again later.';
+      alert(errorMessage);
+      
+      // Return failure for UI handling
+      return { success: false, error };
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    // If login successful, check profile completion
+    if (!error && data.user) {
+      // Profile check will be handled by the useEffect in AuthProvider
+      // that redirects to /complete-profile if needed
+    }
+    
     return { error };
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
+    
+    // If signup successful, create a basic profile
+    if (!error && data.user) {
+      // The profile check in useEffect will handle redirection to /complete-profile
+      // We don't need to create a profile here as it will be created when the user first logs in
+      // and the AuthContext useEffect detects no profile exists
+    }
+    
     return { error };
   };
 

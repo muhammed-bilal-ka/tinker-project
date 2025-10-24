@@ -10,7 +10,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('VITE_PUBLIC_SUPABASE_URL or VITE_PUBLIC_SUPABASE_ANON_KEY is not set. Supabase client may fail until configured.')
 }
 
-export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '')
+// Create Supabase client with additional options for better auth handling
+export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+})
 
 // Types for our database tables
 export interface College {
